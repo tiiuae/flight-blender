@@ -1,14 +1,10 @@
 # API to submit Flight Declarations into Spotlight
-
-
 from os import environ as env
-
 from auth_helper.common import get_redis
 import json
 import requests
 import logging
 from datetime import datetime, timedelta
-
 
 class PassportCredentialsGetter():
     def __init__(self):
@@ -57,16 +53,12 @@ class FlightDeclarationsUploader():
     
         self.credentials = credentials
     
-    def upload_to_server(self, flight_declaration_json):
-        
+    def upload_to_spotlight(self, flight_declaration_json):
         headers = {"Authorization": "Bearer "+ self.credentials['access_token']}
-        
-        payload = {"flight_declaration" : flight_declaration_json}                
-
+        payload = {"flight_declaration" : flight_declaration_json}              
         securl = env.get('FLIGHT_SPOTLIGHT_URL') + '/set_flight_declaration'
         try:
             response = requests.post(securl, data= payload, headers=headers)
-                           
         except Exception as e:
             logging.error(e)
         else:            

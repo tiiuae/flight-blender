@@ -210,7 +210,7 @@ def set_telemetry(request):
             # timestamp_accuracy = current_state['timestamp_accuracy']
             # vertical_speed = current_state['vertical_speed']
         # TODO: This is the operation id provided by Aerobridge
-        flight_id = '61a8044b-d939-4326-a6c9-17bcdbb2e053'
+        # flight_id = '61a8044b-d939-4326-a6c9-17bcdbb2e053'
         now = arrow.now().isoformat()    
         time_format = 'RFC3339'
         # Submit the time stamg as now
@@ -245,7 +245,8 @@ def set_telemetry(request):
         flight_id = rid_details['id']
         r  = TelemetryFlightDetails(id =flight_id,aircraft_type =flight_details['aircraft_type'], current_state = current_state, simulated = 0, recent_positions = [], operator_details = op_details)
         all_rid_data.append(asdict(r))
-
+    #TODO: Setup a geofence in Tile 38 for this operation
+    
     stream_rid_data.delay(rid_data= json.dumps(all_rid_data))
     submission_success = {"message": "Telemetry data succesfully submitted"}
     return JsonResponse(submission_success, status=201, content_type='application/json')

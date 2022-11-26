@@ -86,7 +86,7 @@ def set_flight_declaration(request):
     default_state = 1 # Default state is Acccepted
 
     flight_declaration = FlightDeclarationRequest(features = all_features, type_of_operation=type_of_operation, submitted_by=submitted_by, approved_by= approved_by, is_approved=is_approved, state=default_state)
-    # task = write_flight_declaration.delay(json.dumps(flight_declaration_data))  # Send a job to spotlight
+    # task = write_flight_declaration_to_spotlight.delay(json.dumps(flight_declaration_data))  # Send a job to spotlight
 
     my_operational_intent_converter = OperationalIntentsConverter()
     operational_intent = my_operational_intent_converter.convert_geo_json_to_operational_intent(geo_json_fc = flight_declaration_geo_json, start_datetime = start_datetime, end_datetime = end_datetime)
@@ -111,6 +111,8 @@ def set_flight_declaration(request):
             is_approved = 0
 
     fo = FlightDeclaration(operational_intent = json.dumps(asdict(operational_intent)), bounds= bounds, type_of_operation= type_of_operation, submitted_by= submitted_by, is_approved = is_approved, start_datetime = start_datetime,end_datetime = end_datetime, originating_party = originating_party, flight_declaration_raw_geojson= json.dumps(flight_declaration_geo_json), state = default_state)
+
+    # Set a Geofence in Tile 38 when this operation is submitted 
 
     fo.save()
     op = json.dumps({"message":"Submitted Flight Declaration", 'id':str(fo.id), 'is_approved':is_approved})

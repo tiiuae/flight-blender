@@ -8,7 +8,13 @@ services:
     volumes:
       - ./config/redis.conf:/redis.conf
     container_name: "redis"
-
+    
+  tile38:
+      image: tile38/tile38
+      ports:
+          - "9851:9851"
+      command: [ "tile38-server"]
+      container_name : "tile38"
   db:
     image: postgres
     ports:
