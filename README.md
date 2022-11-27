@@ -24,6 +24,8 @@ To visualize flight tracking data you can use a complementary appplication like 
 
 ## Installation
 
+**NB**s: Flight Blender __will__ require a authorization server to work, we normally make credentials available via [Openskies ID](https://id.openskies.sh), please contact us via the home page to get your credentials for self-hosting.
+
 Docker and Docker Compose files are available for this software. You can first clone this repository using `git clone https://www.github.com/openskies-sh/flight-blender.git` and then go to the directory and use `docker-compose up` command.
 
 This will open up port 8080 and you can post air-traffic data to `http://localhost:8080/set_air_traffic` and then start the processing.
