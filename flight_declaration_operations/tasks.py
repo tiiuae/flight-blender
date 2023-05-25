@@ -19,6 +19,7 @@ def submit_flight_declaration_to_dss(flight_declaration_id: str):
     usingDss = env.get('DSS', 'false')
 
     if usingDss == 'true':
+        print("Using DSS")
         my_dss_opint_creator = DSSOperationalIntentsCreator(
             flight_declaration_id)
 
@@ -73,6 +74,7 @@ def submit_flight_declaration_to_dss(flight_declaration_id: str):
                 send_operational_update_message.delay(
                     flight_declaration_id=flight_declaration_id, message_text=validation_not_ok_msg, level='error')
     else:
+        print("Not using DSS")
         if amqp_connection_url:
             fo = FlightDeclaration.objects.get(id=flight_declaration_id)
             # Update state of the flight operation
@@ -85,6 +87,7 @@ def submit_flight_declaration_to_dss(flight_declaration_id: str):
                 }
                 # json_message = json.dumps(message)
                 # submission_state_updated_msg = "Flight Operation with ID {operation_id} has a updated state: Accepted. ".format(operation_id = flight_declaration_id)
+                print("SENDING FLIGHT APPROVAL NOTIFICATION")
                 send_flight_approved_message.delay(
                     flight_declaration_id=flight_declaration_id, message_text=message, level='info')
             fo.save()
@@ -92,7 +95,7 @@ def submit_flight_declaration_to_dss(flight_declaration_id: str):
 
 @app.task(name="send_operational_update_message")
 def send_operational_update_message(flight_declaration_id: str, message_text: str, level: str = 'info', timestamp: str = None):
-
+    print("Sending operational update message")
     if not timestamp:
         now = arrow.now()
         timestamp = now.isoformat()
@@ -112,7 +115,7 @@ def send_operational_update_message(flight_declaration_id: str, message_text: st
 
 @app.task(name="send_flight_approved_message")
 def send_flight_approved_message(flight_declaration_id: str, message_text: str, level: str = 'info', timestamp: str = None):
-
+    print("Sending flight approval message", flush=True)
     if not timestamp:
         now = arrow.now()
         timestamp = now.isoformat()
