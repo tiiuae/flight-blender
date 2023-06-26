@@ -1,4 +1,5 @@
-from requests.adapters import HTTPResponse
+#from requests.adapters import HTTPResponse
+from django.http import HttpResponse
 from auth_helper.utils import requires_scopes
 import json
 from dataclasses import asdict, is_dataclass
