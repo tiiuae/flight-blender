@@ -1,4 +1,3 @@
-
 from django.http import HttpResponse
 from auth_helper.utils import requires_scopes
 import json
