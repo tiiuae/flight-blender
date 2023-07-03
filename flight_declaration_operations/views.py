@@ -38,13 +38,15 @@ logger = logging.getLogger("django")
 @api_view(["POST"])
 @requires_scopes(["blender.write"])
 def set_flight_declaration(request):
+    """
+    Add a new Flight Declaration. Submit a Flight Declaration into Flight Blender.
+    """
     try:
         assert request.headers["Content-Type"] == "application/json"
-    except AssertionError as ae:
+    except AssertionError:
         msg = {"message": "Unsupported Media Type"}
         return JsonResponse(json.dumps(msg), status=415, mimetype="application/json")
-    else:
-        req = request.data
+    req = request.data
 
     try:
         assert req.keys() >= {
@@ -55,7 +57,7 @@ def set_flight_declaration(request):
             "type_of_operation",
         }
 
-    except AssertionError as ae:
+    except AssertionError:
         msg = json.dumps(
             {
                 "message": "Not all necessary fields were provided. Originating Party, Start Datetime, End Datetime, Flight Declaration and Type of operation must be provided."
@@ -65,10 +67,10 @@ def set_flight_declaration(request):
 
     try:
         flight_declaration_geo_json = req["flight_declaration_geo_json"]
-    except KeyError as ke:
+    except KeyError:
         msg = json.dumps(
             {
-                "message": "A valid flight declaration as specified by the A flight declration protocol must be submitted."
+                "message": "A valid flight declaration as specified by the A flight declaration protocol must be submitted."
             }
         )
         return HttpResponse(msg, status=400)
@@ -96,7 +98,7 @@ def set_flight_declaration(request):
             if "end_datetime" not in req
             else arrow.get(req["end_datetime"]).isoformat()
         )
-    except Exception as e:
+    except Exception:
         ten_mins_from_now = now.shift(minutes=10)
         start_datetime = now.isoformat()
         end_datetime = ten_mins_from_now.isoformat()
@@ -138,7 +140,7 @@ def set_flight_declaration(request):
         try:
             assert "min_altitude" in props
             assert "max_altitude" in props
-        except AssertionError as ae:
+        except AssertionError:
             op = json.dumps(
                 {
                     "message": "Error in processing the submitted GeoJSON every Feature in a GeoJSON FeatureCollection must have a min_altitude and max_altitude data structure"
