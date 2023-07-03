@@ -14,8 +14,6 @@ from geo_fence_operations.models import GeoFence
 from .flight_declarations_rtree_helper import FlightDeclarationRTreeIndexFactory
 from shapely.geometry import shape
 from .data_definitions import (
-    FlightDeclarationRequest,
-    Altitude,
     FlightDeclarationCreateResponse,
 )
 from rest_framework import mixins, generics
@@ -76,7 +74,6 @@ def set_flight_declaration(request):
         return HttpResponse(msg, status=400)
 
     submitted_by = None if "submitted_by" not in req else req["submitted_by"]
-    approved_by = None if "approved_by" not in req else req["approved_by"]
     is_approved = False
     type_of_operation = (
         0 if "type_of_operation" not in req else req["type_of_operation"]
@@ -148,27 +145,13 @@ def set_flight_declaration(request):
             )
             return HttpResponse(op, status=400, content_type="application/json")
 
-        min_altitude = Altitude(
-            meters=props["min_altitude"]["meters"], datum=props["min_altitude"]["datum"]
-        )
-        max_altitude = Altitude(
-            meters=props["max_altitude"]["meters"], datum=props["max_altitude"]["datum"]
-        )
 
-    default_state = 1  # Default state is Acccepted
 
-    flight_declaration = FlightDeclarationRequest(
-        features=all_features,
-        type_of_operation=type_of_operation,
-        submitted_by=submitted_by,
-        approved_by=approved_by,
-        is_approved=is_approved,
-        state=default_state,
-    )
+    default_state = 1  # Default state is Accepted
 
     my_operational_intent_converter = OperationalIntentsConverter()
 
-    parital_op_int_ref = (
+    partial_op_int_ref = (
         my_operational_intent_converter.create_partial_operational_intent_ref(
             geo_json_fc=flight_declaration_geo_json,
             start_datetime=start_datetime,
@@ -237,7 +220,7 @@ def set_flight_declaration(request):
             is_approved = 0
 
     fo = FlightDeclaration(
-        operational_intent=json.dumps(asdict(parital_op_int_ref)),
+        operational_intent=json.dumps(asdict(partial_op_int_ref)),
         bounds=bounds,
         type_of_operation=type_of_operation,
         submitted_by=submitted_by,
