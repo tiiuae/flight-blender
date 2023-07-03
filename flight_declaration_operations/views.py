@@ -6,7 +6,7 @@ import json
 import arrow
 from rest_framework.decorators import api_view
 from typing import List
-from django.http import HttpResponse, JsonResponse
+from django.http import HttpResponse
 from .models import FlightDeclaration
 from dataclasses import asdict
 from geo_fence_operations import rtree_geo_fence_helper
@@ -43,7 +43,7 @@ def set_flight_declaration(request):
         assert request.headers["Content-Type"] == "application/json"
     except AssertionError:
         msg = {"message": "Unsupported Media Type"}
-        return JsonResponse(json.dumps(msg), status=415, mimetype="application/json")
+        return HttpResponse(json.dumps(msg), status=415, mimetype="application/json")
     req = request.data
 
     try:
