@@ -43,7 +43,7 @@ def set_flight_declaration(request):
         assert request.headers["Content-Type"] == "application/json"
     except AssertionError:
         msg = {"message": "Unsupported Media Type"}
-        return HttpResponse(json.dumps(msg), status=415, mimetype="application/json")
+        return HttpResponse(json.dumps(msg), status=415, content_type="application/json")
     req = request.data
 
     try:
