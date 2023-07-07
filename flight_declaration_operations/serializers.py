@@ -1,7 +1,21 @@
-from rest_framework import serializers
 import json
+from rest_framework import serializers
+from rest_framework_gis import serializers as geos_serializers
 from .models import FlightDeclaration
 from .utils import OperationalIntentsConverter
+
+
+class FlightDeclarationRequestSerializer(serializers.Serializer):
+    """
+    Deserializes the JSON received payload for validation purposes.
+    """
+    originating_party=serializers.CharField()
+    start_datetime=serializers.DateTimeField()
+    end_datetime=serializers.DateTimeField()
+    flight_declaration_geo_json=geos_serializers.GeoFeatureModelSerializer()
+    type_of_operation=serializers.IntegerField()
+
+
 
 class FlightDeclarationSerializer(serializers.ModelSerializer):
     operational_intent = serializers.SerializerMethodField() 

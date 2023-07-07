@@ -5,6 +5,8 @@ from auth_helper.utils import requires_scopes
 import json
 import arrow
 from rest_framework.decorators import api_view
+from rest_framework.parsers import JSONParser
+from rest_framework.renderers import JSONRenderer
 from typing import List
 from django.http import HttpResponse
 from .models import FlightDeclaration
@@ -21,6 +23,7 @@ from .serializers import (
     FlightDeclarationSerializer,
     FlightDeclarationApprovalSerializer,
     FlightDeclarationStateSerializer,
+    FlightDeclarationRequestSerializer
 )
 from django.utils.decorators import method_decorator
 from .utils import OperationalIntentsConverter
@@ -29,7 +32,7 @@ from .pagination import StandardResultsSetPagination
 from os import environ as env
 
 import logging
-
+import io
 logger = logging.getLogger("django")
 
 
@@ -44,24 +47,32 @@ def set_flight_declaration(request):
     except AssertionError:
         msg = {"message": "Unsupported Media Type"}
         return HttpResponse(json.dumps(msg), status=415, content_type="application/json")
-    req = request.data
+    #req = request.data
 
-    try:
-        assert req.keys() >= {
-            "originating_party",
-            "start_datetime",
-            "end_datetime",
-            "flight_declaration_geo_json",
-            "type_of_operation",
-        }
+    json_data = request.body
+    stream = io.BytesIO(json_data)
+    req = JSONParser().parse(stream)
 
-    except AssertionError:
-        msg = json.dumps(
-            {
-                "message": "Not all necessary fields were provided. Originating Party, Start Datetime, End Datetime, Flight Declaration and Type of operation must be provided."
-            }
-        )
-        return HttpResponse(msg, status=400)
+    serializer = FlightDeclarationRequestSerializer(data=req)
+    if not serializer.is_valid():
+        return HttpResponse(JSONRenderer().render(serializer.errors), status=400,content_type="application/json")
+
+    # try:
+    #     assert req.keys() >= {
+    #         "originating_party",
+    #         "start_datetime",
+    #         "end_datetime",
+    #         "flight_declaration_geo_json",
+    #         "type_of_operation",
+    #     }
+
+    # except AssertionError:
+    #     msg = json.dumps(
+    #         {
+    #             "message": "Not all necessary fields were provided. Originating Party, Start Datetime, End Datetime, Flight Declaration and Type of operation must be provided."
+    #         }
+    #     )
+    #     return HttpResponse(msg, status=400)
 
     try:
         flight_declaration_geo_json = req["flight_declaration_geo_json"]
