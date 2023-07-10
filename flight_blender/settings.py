@@ -47,7 +47,6 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
-    'rest_framework_gis',
     'flight_declaration_operations',
     'geo_fence_operations',
     'scd_operations',
