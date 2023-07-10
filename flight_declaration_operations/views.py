@@ -18,7 +18,7 @@ from shapely.geometry import shape
 from .data_definitions import (
     FlightDeclarationCreateResponse,
 )
-from rest_framework import mixins, generics,status,
+from rest_framework import mixins, generics,status
 from .serializers import (
     FlightDeclarationSerializer,
     FlightDeclarationApprovalSerializer,
