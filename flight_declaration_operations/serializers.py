@@ -1,3 +1,6 @@
+"""
+This module holds the Serialization classes to be used in Flight Declaration operations.
+"""
 import json
 from rest_framework import serializers
 from .models import FlightDeclaration
@@ -14,10 +17,10 @@ class FlightDeclarationRequestSerializer(serializers.Serializer):
     type_of_operation=serializers.IntegerField()
     flight_declaration_geo_json=serializers.DictField()
 
-
-
-
 class FlightDeclarationSerializer(serializers.ModelSerializer):
+    """
+    Serializer class for the model: FlightDeclaration
+    """
     operational_intent = serializers.SerializerMethodField() 
     flight_declaration_geojson = serializers.SerializerMethodField() 
     flight_declaration_raw_geojson = serializers.SerializerMethodField() 
