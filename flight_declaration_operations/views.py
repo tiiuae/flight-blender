@@ -18,7 +18,7 @@ from shapely.geometry import shape
 from .data_definitions import (
     FlightDeclarationCreateResponse,
 )
-from rest_framework import mixins, generics
+from rest_framework import mixins, generics,status,
 from .serializers import (
     FlightDeclarationSerializer,
     FlightDeclarationApprovalSerializer,
@@ -46,14 +46,14 @@ def set_flight_declaration(request:HttpRequest):
         assert request.headers["Content-Type"] == "application/json"
     except AssertionError:
         msg = {"message": "Unsupported Media Type"}
-        return HttpResponse(json.dumps(msg), status=415, content_type="application/json")
+        return HttpResponse(json.dumps(msg), status=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE, content_type="application/json")
 
     stream = io.BytesIO(request.body)
     json_payload = JSONParser().parse(stream)
 
     serializer = FlightDeclarationRequestSerializer(data=json_payload)
     if not serializer.is_valid():
-        return HttpResponse(JSONRenderer().render(serializer.errors), status=400,content_type="application/json")
+        return HttpResponse(JSONRenderer().render(serializer.errors), status=status.HTTP_400_BAD_REQUEST,content_type="application/json")
 
     try:
         flight_declaration_geo_json = json_payload["flight_declaration_geo_json"]
@@ -63,7 +63,7 @@ def set_flight_declaration(request:HttpRequest):
                 "message": "A valid flight declaration as specified by the A flight declaration protocol must be submitted."
             }
         )
-        return HttpResponse(msg, status=400)
+        return HttpResponse(msg, status=status.HTTP_400_BAD_REQUEST)
 
     submitted_by = None if "submitted_by" not in json_payload else json_payload["submitted_by"]
     is_approved = False
@@ -109,7 +109,7 @@ def set_flight_declaration(request:HttpRequest):
                 "message": "A flight declaration cannot have a start / end time in the past or after two days from current time."
             }
         )
-        return HttpResponse(msg, status=400)
+        return HttpResponse(msg, status=status.HTTP_400_BAD_REQUEST)
     all_features = []
 
     for feature in flight_declaration_geo_json["features"]:
@@ -123,7 +123,7 @@ def set_flight_declaration(request:HttpRequest):
                     "message": "Error in processing the submitted GeoJSON: every Feature in a GeoJSON FeatureCollection must have a valid geometry, please check your submitted FeatureCollection"
                 }
             )
-            return HttpResponse(op, status=400, content_type="application/json")
+            return HttpResponse(op, status=status.HTTP_400_BAD_REQUEST, content_type="application/json")
 
         props = feature["properties"]
         try:
@@ -135,7 +135,7 @@ def set_flight_declaration(request:HttpRequest):
                     "message": "Error in processing the submitted GeoJSON every Feature in a GeoJSON FeatureCollection must have a min_altitude and max_altitude data structure"
                 }
             )
-            return HttpResponse(op, status=400, content_type="application/json")
+            return HttpResponse(op, status=status.HTTP_400_BAD_REQUEST, content_type="application/json")
 
 
 
@@ -264,7 +264,7 @@ def set_flight_declaration(request:HttpRequest):
     )
 
     op = json.dumps(asdict(creation_response))
-    return HttpResponse(op, status=200, content_type="application/json")
+    return HttpResponse(op, status=status.HTTP_200_OK, content_type="application/json")
 
 
 @method_decorator(requires_scopes(["blender.write"]), name="dispatch")
