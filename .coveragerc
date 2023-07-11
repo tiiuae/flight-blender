@@ -9,3 +9,4 @@ omit =
     *asgi.py,
     *test.py,
     manage.py
+    
