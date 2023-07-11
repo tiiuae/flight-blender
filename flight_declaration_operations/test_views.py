@@ -2,6 +2,7 @@ import pytest
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
+
   
 
 
@@ -9,15 +10,36 @@ JWT = "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJ0ZXN0ZmxpZ2h0LmZsaWdodGJs
 
 class FlightDeclarationTests(APITestCase):
 
-    def test_incorrect_payload(self):
-       # client.credentials(HTTP_AUTHORIZATION=f'Bearer {JWT}')
-
+    
+    def test_invalid_content_type(self):
         url = reverse("set_flight_declaration")
-        incorrect_data =99
-
-        response = self.client.post(url, incorrect_data, format='json')
+        self.client.defaults['HTTP_AUTHORIZATION'] = 'Bearer ' + JWT
+        response = self.client.post(url,content_type='text/plain')
         self.assertEqual(response.status_code, status.HTTP_415_UNSUPPORTED_MEDIA_TYPE)
 
-        assert True == True
+    def test_invalid_payload(self):
+        url = reverse("set_flight_declaration")
+        self.client.defaults['HTTP_AUTHORIZATION'] = 'Bearer ' + JWT
 
+        invalid_payload = {}
+        response = self.client.post(url,content_type='application/json',data=invalid_payload)
+        response_json ={
+            "originating_party": [
+                "This field is required."
+            ],
+            "start_datetime": [
+                "This field is required."
+            ],
+            "end_datetime": [
+                "This field is required."
+            ],
+            "type_of_operation": [
+                "This field is required."
+            ],
+            "flight_declaration_geo_json": [
+                "This field is required."
+            ]
+            }
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.json(),response_json)
 
