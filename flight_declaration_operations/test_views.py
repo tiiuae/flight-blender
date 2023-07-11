@@ -1,4 +1,6 @@
-import pytest
+"""
+This file contains unit tests for the views functions in flight_declaration_operations
+"""
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
@@ -8,19 +10,29 @@ JWT = "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJ0ZXN0ZmxpZ2h0LmZsaWdodGJs
 
 
 class FlightDeclarationTests(APITestCase):
-    def test_invalid_content_type(self):
-        url = reverse("set_flight_declaration")
+    """
+    Contains tests for the function set_flight_declaration in views.
+    """
+
+    def setUp(self):
         self.client.defaults["HTTP_AUTHORIZATION"] = "Bearer " + JWT
-        response = self.client.post(url, content_type="text/plain")
+        self.api_url =reverse("set_flight_declaration")
+    
+    def test_invalid_content_type(self):
+        """
+        The endpoint expects the content-type in application/json. If anything else is provided an error is thrown.
+        """
+        
+        response = self.client.post(self.api_url, content_type="text/plain")
         self.assertEqual(response.status_code, status.HTTP_415_UNSUPPORTED_MEDIA_TYPE)
 
     def test_invalid_payload(self):
-        url = reverse("set_flight_declaration")
-        self.client.defaults["HTTP_AUTHORIZATION"] = "Bearer " + JWT
-
+        """
+        The endpoint expects certain fields to be provided. Errors will be thrown otherwise.
+        """
         invalid_payload = {}
         response = self.client.post(
-            url, content_type="application/json", data=invalid_payload
+            self.api_url, content_type="application/json", data=invalid_payload
         )
         response_json = {
             "originating_party": ["This field is required."],
