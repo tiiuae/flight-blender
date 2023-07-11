@@ -39,7 +39,7 @@ class FlightDeclarationTests(APITestCase):
             "start_datetime": ["This field is required."],
             "end_datetime": ["This field is required."],
             "type_of_operation": ["This field is required."],
-            "flight_declaration_geo_json": ["This field is required."],
+            "flight_declaration_geo_json": ["A valid flight declaration as specified by the A flight declaration protocol must be submitted."],
         }
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(response.json(), response_json)

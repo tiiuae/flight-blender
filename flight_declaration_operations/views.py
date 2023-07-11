@@ -8,7 +8,7 @@ from rest_framework.decorators import api_view
 from rest_framework.parsers import JSONParser
 from rest_framework.renderers import JSONRenderer
 from typing import List
-from django.http import HttpResponse,HttpRequest
+from django.http import HttpResponse, HttpRequest
 from .models import FlightDeclaration
 from dataclasses import asdict
 from geo_fence_operations import rtree_geo_fence_helper
@@ -18,12 +18,12 @@ from shapely.geometry import shape
 from .data_definitions import (
     FlightDeclarationCreateResponse,
 )
-from rest_framework import mixins, generics,status
+from rest_framework import mixins, generics, status
 from .serializers import (
     FlightDeclarationSerializer,
     FlightDeclarationApprovalSerializer,
     FlightDeclarationStateSerializer,
-    FlightDeclarationRequestSerializer
+    FlightDeclarationRequestSerializer,
 )
 from django.utils.decorators import method_decorator
 from .utils import OperationalIntentsConverter
@@ -33,12 +33,13 @@ from os import environ as env
 
 import logging
 import io
+
 logger = logging.getLogger("django")
 
 
 @api_view(["POST"])
 @requires_scopes(["blender.write"])
-def set_flight_declaration(request:HttpRequest):
+def set_flight_declaration(request: HttpRequest):
     """
     Add a new Flight Declaration. Submit a Flight Declaration into Flight Blender.
     """
@@ -46,20 +47,31 @@ def set_flight_declaration(request:HttpRequest):
         assert request.headers["Content-Type"] == "application/json"
     except AssertionError:
         msg = {"message": "Unsupported Media Type"}
-        return HttpResponse(json.dumps(msg), status=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE, content_type="application/json")
+        return HttpResponse(
+            json.dumps(msg),
+            status=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
+            content_type="application/json",
+        )
 
     stream = io.BytesIO(request.body)
     json_payload = JSONParser().parse(stream)
 
     serializer = FlightDeclarationRequestSerializer(data=json_payload)
     if not serializer.is_valid():
-        return HttpResponse(JSONRenderer().render(serializer.errors), status=status.HTTP_400_BAD_REQUEST,content_type="application/json")
+        return HttpResponse(
+            JSONRenderer().render(serializer.errors),
+            status=status.HTTP_400_BAD_REQUEST,
+            content_type="application/json",
+        )
 
-
-    submitted_by = None if "submitted_by" not in json_payload else json_payload["submitted_by"]
+    submitted_by = (
+        None if "submitted_by" not in json_payload else json_payload["submitted_by"]
+    )
     is_approved = False
     type_of_operation = (
-        0 if "type_of_operation" not in json_payload else json_payload["type_of_operation"]
+        0
+        if "type_of_operation" not in json_payload
+        else json_payload["type_of_operation"]
     )
     originating_party = (
         "No Flight Information"
@@ -103,6 +115,7 @@ def set_flight_declaration(request:HttpRequest):
         return HttpResponse(msg, status=status.HTTP_400_BAD_REQUEST)
     all_features = []
 
+    flight_declaration_geo_json = json_payload["flight_declaration_geo_json"]
     for feature in flight_declaration_geo_json["features"]:
         geometry = feature["geometry"]
         s = shape(geometry)
@@ -114,7 +127,9 @@ def set_flight_declaration(request:HttpRequest):
                     "message": "Error in processing the submitted GeoJSON: every Feature in a GeoJSON FeatureCollection must have a valid geometry, please check your submitted FeatureCollection"
                 }
             )
-            return HttpResponse(op, status=status.HTTP_400_BAD_REQUEST, content_type="application/json")
+            return HttpResponse(
+                op, status=status.HTTP_400_BAD_REQUEST, content_type="application/json"
+            )
 
         props = feature["properties"]
         try:
@@ -126,9 +141,9 @@ def set_flight_declaration(request:HttpRequest):
                     "message": "Error in processing the submitted GeoJSON every Feature in a GeoJSON FeatureCollection must have a min_altitude and max_altitude data structure"
                 }
             )
-            return HttpResponse(op, status=status.HTTP_400_BAD_REQUEST, content_type="application/json")
-
-
+            return HttpResponse(
+                op, status=status.HTTP_400_BAD_REQUEST, content_type="application/json"
+            )
 
     default_state = 1  # Default state is Accepted
 
