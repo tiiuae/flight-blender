@@ -15,7 +15,7 @@ class FlightDeclarationRequestSerializer(serializers.Serializer):
     start_datetime=serializers.DateTimeField()
     end_datetime=serializers.DateTimeField()
     type_of_operation=serializers.IntegerField()
-    flight_declaration_geo_json=serializers.DictField()
+    flight_declaration_geo_json=serializers.DictField(error_messages={'required': 'A valid flight declaration as specified by the A flight declaration protocol must be submitted.'})
 
 class FlightDeclarationSerializer(serializers.ModelSerializer):
     """

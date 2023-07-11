@@ -55,15 +55,6 @@ def set_flight_declaration(request:HttpRequest):
     if not serializer.is_valid():
         return HttpResponse(JSONRenderer().render(serializer.errors), status=status.HTTP_400_BAD_REQUEST,content_type="application/json")
 
-    try:
-        flight_declaration_geo_json = json_payload["flight_declaration_geo_json"]
-    except KeyError:
-        msg = json.dumps(
-            {
-                "message": "A valid flight declaration as specified by the A flight declaration protocol must be submitted."
-            }
-        )
-        return HttpResponse(msg, status=status.HTTP_400_BAD_REQUEST)
 
     submitted_by = None if "submitted_by" not in json_payload else json_payload["submitted_by"]
     is_approved = False
