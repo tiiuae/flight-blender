@@ -53,11 +53,11 @@ Take a look at sample data below to see the kind of data that can be submitted i
 
 ### Test execution
 
-- Spin up the Docker containers in detach mode using the command ´docker compose up -d´
+- Spin up the Docker containers in detach mode using the command `docker compose up -d`
 - In the code editor(VSCode preferred), open command pallette(Cmd±Shift±P in Mac,Ctl+Shift+P in others) select the command: **Docker Containers: Attach Shell**.
 - Select **flight-blender-worker container**
 - This will open a new shell in the Terminal tab. And the shell is now connected to the container+the VSCode
-- Run the command ´pytest´ in the shell to execute all tests in the repository.
+- Run the command `pytest` in the shell to execute all tests in the repository.
 - This will also create a code coverage report in *htmlcov* directory.
 - Browse the */flight-blender/htmlcov/index.html* to see the detailed tests coverage.
 
