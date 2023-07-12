@@ -129,7 +129,7 @@ def set_flight_declaration(request: HttpRequest):
         except AssertionError:
             op = json.dumps(
                 {
-                    "message": "Error in processing the submitted GeoJSON every Feature in a GeoJSON FeatureCollection must have a min_altitude and max_altitude data structure"
+                    "message": "Error in processing the submitted GeoJSON: every Feature in a GeoJSON FeatureCollection must have a min_altitude and max_altitude data structure"
                 }
             )
             return HttpResponse(

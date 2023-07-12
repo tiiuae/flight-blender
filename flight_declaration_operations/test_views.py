@@ -94,6 +94,94 @@ class FlightDeclarationTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(response.json(), response_json)
 
+    def test_payload_with_invalid_geometry(self):
+        """
+        The payload with invalid geometry.
+        """
+        valid_payload_with_invalid_geometry = {
+            "start_datetime": "2023-07-12T15:00:00+00:00",
+            "end_datetime": "2023-07-12T15:00:00+00:00",
+            "flight_declaration_geo_json": {
+                "type": "FeatureCollection",
+                "features": [
+                    {
+                        "type": "Feature",
+                        "properties": {
+                            "id": "0",
+                            "start_datetime": "2023-02-03T16:29:08.842Z",
+                            "end_datetime": "2023-02-03T16:29:08.842Z",
+                            "max_altitude": {"meters": 152.4, "datum": "agl"},
+                            "min_altitude": {"meters": 102.4, "datum": "agl"},
+                        },
+                        "geometry": {
+                            "coordinates": [
+                                [15.776083042366338, 1.18379149158649],
+                                [15.776083042366338, 1.18379149158649],
+                                [15.776083042366338, 1.18379149158649],
+                                [15.776083042366338, 1.18379149158649],
+                                [15.776083042366338, 1.18379149158649],
+                            ],
+                            "type": "LineString",
+                        },
+                    }
+                ],
+            },
+        }
+
+        response = self.client.post(
+            self.api_url,
+            content_type="application/json",
+            data=json.dumps(valid_payload_with_invalid_geometry),
+        )
+        response_json = {
+            "message": "Error in processing the submitted GeoJSON: every Feature in a GeoJSON FeatureCollection must have a valid geometry, please check your submitted FeatureCollection"
+        }
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.json(), response_json)
+
+    def test_payload_with_no_altitudes(self):
+        """
+        The payload with invalid geometry.
+        """
+        valid_payload_with_invalid_geometry = {
+            "start_datetime": "2023-07-12T15:00:00+00:00",
+            "end_datetime": "2023-07-12T15:00:00+00:00",
+            "flight_declaration_geo_json": {
+                "type": "FeatureCollection",
+                "features": [
+                    {
+                        "type": "Feature",
+                        "properties": {
+                            "id": "0",
+                            "start_datetime": "2023-02-03T16:29:08.842Z",
+                            "end_datetime": "2023-02-03T16:29:08.842Z",
+                        },
+                        "geometry": {
+                            "coordinates": [
+                                [15.776083042366338, 1.18379149158649],
+                                [15.799823306116707, 1.2159036290562142],
+                                [15.812391681043636, 1.2675614791659342],
+                                [15.822167083764754, 1.3024648511225934],
+                                [15.82635654207283, 1.3220105290909174],
+                            ],
+                            "type": "LineString",
+                        },
+                    }
+                ],
+            },
+        }
+
+        response = self.client.post(
+            self.api_url,
+            content_type="application/json",
+            data=json.dumps(valid_payload_with_invalid_geometry),
+        )
+        response_json = {
+            "message": "Error in processing the submitted GeoJSON: every Feature in a GeoJSON FeatureCollection must have a min_altitude and max_altitude data structure"
+        }
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.json(), response_json)
+
     def test_valid_payload(self):
         """
         The payload is valid.
@@ -109,8 +197,5 @@ class FlightDeclarationTests(APITestCase):
             content_type="application/json",
             data=json.dumps(valid_payload),
         )
-        # self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(
-            response.json()["message"],
-          "Submitted Flight Declaration"
-        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.json()["message"], "Submitted Flight Declaration")
