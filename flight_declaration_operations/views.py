@@ -63,7 +63,7 @@ def set_flight_declaration(request: HttpRequest):
             status=status.HTTP_400_BAD_REQUEST,
             content_type="application/json",
         )
-
+    
     flight_declaration_request = serializer.create(serializer.validated_data)
     is_approved = False
 
@@ -96,12 +96,15 @@ def set_flight_declaration(request: HttpRequest):
         or e_datetime > two_days_from_now
         or s_datetime > two_days_from_now
     ):
-        msg = json.dumps(
-            {
-                "message": "A flight declaration cannot have a start / end time in the past or after two days from current time."
-            }
+        return HttpResponse(
+            json.dumps(
+                {
+                    "message": "A flight declaration cannot have a start or end time in the past or after two days from current time."
+                }
+            ),
+            status=status.HTTP_400_BAD_REQUEST,
+            content_type="application/json",
         )
-        return HttpResponse(msg, status=status.HTTP_400_BAD_REQUEST)
     all_features = []
 
     for feature in flight_declaration_request.flight_declaration_geo_json["features"]:
