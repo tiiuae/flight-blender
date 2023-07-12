@@ -2,6 +2,7 @@
 This file contains unit tests for the views functions in flight_declaration_operations
 """
 import json
+from datetime import datetime
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
@@ -18,31 +19,32 @@ class FlightDeclarationTests(APITestCase):
     def setUp(self):
         self.client.defaults["HTTP_AUTHORIZATION"] = "Bearer " + JWT
         self.api_url = reverse("set_flight_declaration")
-        self.flight_declaration_geo_json = {
-                "type": "FeatureCollection",
-                "features": [
-                    {
-                        "type": "Feature",
-                        "properties": {
-                            "id": "0",
-                            "start_datetime": "2023-02-03T16:29:08.842Z",
-                            "end_datetime": "2023-02-03T16:29:08.842Z",
-                            "max_altitude": {"meters": 152.4, "datum": "agl"},
-                            "min_altitude": {"meters": 102.4, "datum": "agl"},
-                        },
-                        "geometry": {
-                            "coordinates": [
-                                [15.776083042366338, 1.18379149158649],
-                                [15.799823306116707, 1.2159036290562142],
-                                [15.812391681043636, 1.2675614791659342],
-                                [15.822167083764754, 1.3024648511225934],
-                                [15.82635654207283, 1.3220105290909174],
-                            ],
-                            "type": "LineString",
-                        },
-                    }
-                ],
-            }
+        self.now = datetime.now().strftime("%Y-%m-%dT%H:%M:%SZ")
+        self.valid_flight_declaration_geo_json = {
+            "type": "FeatureCollection",
+            "features": [
+                {
+                    "type": "Feature",
+                    "properties": {
+                        "id": "0",
+                        "start_datetime": "2023-02-03T16:29:08.842Z",
+                        "end_datetime": "2023-02-03T16:29:08.842Z",
+                        "max_altitude": {"meters": 152.4, "datum": "agl"},
+                        "min_altitude": {"meters": 102.4, "datum": "agl"},
+                    },
+                    "geometry": {
+                        "coordinates": [
+                            [15.776083042366338, 1.18379149158649],
+                            [15.799823306116707, 1.2159036290562142],
+                            [15.812391681043636, 1.2675614791659342],
+                            [15.822167083764754, 1.3024648511225934],
+                            [15.82635654207283, 1.3220105290909174],
+                        ],
+                        "type": "LineString",
+                    },
+                }
+            ],
+        }
 
     def test_invalid_content_type(self):
         """
@@ -77,7 +79,7 @@ class FlightDeclarationTests(APITestCase):
         payload_with_expired_dates = {
             "start_datetime": "2023-01-01T15:00:00+00:00",
             "end_datetime": "2023-01-01T15:00:00+00:00",
-            "flight_declaration_geo_json": self.flight_declaration_geo_json
+            "flight_declaration_geo_json": self.valid_flight_declaration_geo_json,
         }
 
         response = self.client.post(
@@ -86,6 +88,29 @@ class FlightDeclarationTests(APITestCase):
             data=json.dumps(payload_with_expired_dates),
         )
 
-        response_json = { "message": "A flight declaration cannot have a start or end time in the past or after two days from current time."}
+        response_json = {
+            "message": "A flight declaration cannot have a start or end time in the past or after two days from current time."
+        }
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(response.json(), response_json)
+
+    def test_valid_payload(self):
+        """
+        The payload is valid.
+        """
+        valid_payload = {
+            "start_datetime": "2023-07-12T15:00:00+00:00",
+            "end_datetime": "2023-07-12T15:00:00+00:00",
+            "flight_declaration_geo_json": self.valid_flight_declaration_geo_json,
+        }
+
+        response = self.client.post(
+            self.api_url,
+            content_type="application/json",
+            data=json.dumps(valid_payload),
+        )
+        # self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(
+            response.json()["message"],
+          "Submitted Flight Declaration"
+        )
