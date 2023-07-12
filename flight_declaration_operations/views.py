@@ -64,20 +64,9 @@ def set_flight_declaration(request: HttpRequest):
             content_type="application/json",
         )
 
-    submitted_by = (
-        None if "submitted_by" not in json_payload else json_payload["submitted_by"]
-    )
+    flight_declaration_request = serializer.create(serializer.validated_data)
     is_approved = False
-    type_of_operation = (
-        0
-        if "type_of_operation" not in json_payload
-        else json_payload["type_of_operation"]
-    )
-    originating_party = (
-        "No Flight Information"
-        if "originating_party" not in json_payload
-        else json_payload["originating_party"]
-    )
+
     now = arrow.now()
     try:
         start_datetime = (
@@ -115,8 +104,7 @@ def set_flight_declaration(request: HttpRequest):
         return HttpResponse(msg, status=status.HTTP_400_BAD_REQUEST)
     all_features = []
 
-    flight_declaration_geo_json = json_payload["flight_declaration_geo_json"]
-    for feature in flight_declaration_geo_json["features"]:
+    for feature in flight_declaration_request.flight_declaration_geo_json["features"]:
         geometry = feature["geometry"]
         s = shape(geometry)
         if s.is_valid:
@@ -151,7 +139,7 @@ def set_flight_declaration(request: HttpRequest):
 
     partial_op_int_ref = (
         my_operational_intent_converter.create_partial_operational_intent_ref(
-            geo_json_fc=flight_declaration_geo_json,
+            geo_json_fc=flight_declaration_request.flight_declaration_geo_json,
             start_datetime=start_datetime,
             end_datetime=end_datetime,
             priority=0,
@@ -220,13 +208,15 @@ def set_flight_declaration(request: HttpRequest):
     fo = FlightDeclaration(
         operational_intent=json.dumps(asdict(partial_op_int_ref)),
         bounds=bounds,
-        type_of_operation=type_of_operation,
-        submitted_by=submitted_by,
+        type_of_operation=flight_declaration_request.type_of_operation,
+        submitted_by=flight_declaration_request.submitted_by,
         is_approved=is_approved,
         start_datetime=start_datetime,
         end_datetime=end_datetime,
-        originating_party=originating_party,
-        flight_declaration_raw_geojson=json.dumps(flight_declaration_geo_json),
+        originating_party=flight_declaration_request.originating_party,
+        flight_declaration_raw_geojson=json.dumps(
+            flight_declaration_request.flight_declaration_geo_json
+        ),
         state=default_state,
     )
     fo.save()

@@ -16,13 +16,13 @@ class FlightDeclarationTests(APITestCase):
 
     def setUp(self):
         self.client.defaults["HTTP_AUTHORIZATION"] = "Bearer " + JWT
-        self.api_url =reverse("set_flight_declaration")
-    
+        self.api_url = reverse("set_flight_declaration")
+
     def test_invalid_content_type(self):
         """
         The endpoint expects the content-type in application/json. If anything else is provided an error is thrown.
         """
-        
+
         response = self.client.post(self.api_url, content_type="text/plain")
         self.assertEqual(response.status_code, status.HTTP_415_UNSUPPORTED_MEDIA_TYPE)
 
@@ -35,11 +35,11 @@ class FlightDeclarationTests(APITestCase):
             self.api_url, content_type="application/json", data=invalid_payload
         )
         response_json = {
-            "originating_party": ["This field is required."],
             "start_datetime": ["This field is required."],
             "end_datetime": ["This field is required."],
-            "type_of_operation": ["This field is required."],
-            "flight_declaration_geo_json": ["A valid flight declaration as specified by the A flight declaration protocol must be submitted."],
+            "flight_declaration_geo_json": [
+                "A valid flight declaration as specified by the A flight declaration protocol must be submitted."
+            ],
         }
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(response.json(), response_json)
