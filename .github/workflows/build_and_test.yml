@@ -21,6 +21,11 @@ jobs:
       uses: actions/setup-python@v3
       with:
         python-version: ${{ matrix.python-version }}
+
+    - name: 'Create env file'
+      run: |
+        touch .env
+        cat .env
     - name: Build the docker container
       run: |
         docker-compose build
