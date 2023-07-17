@@ -25,6 +25,30 @@ jobs:
     - name: 'Create an env file'
       run: |
         touch .env
+        echo SECRET_KEY=abc >> .env
+        echo ALLOWED_HOSTS=HOSTNAME1,HOSTNAME2 >> .env
+        echo IS_DEBUG=1 >> .env
+        echo POSTGRES_USER=postgres >> .env
+        echo POSTGRES_PASSWORD=postgres >> .env
+        echo POSTGRES_DB=postgres >> .env
+        echo POSTGRES_HOST=db >> .env
+        echo PGDATA=/var/lib/postgresql/data/pgdata >> .env
+        echo OPENSKY_NETWORK_USERNAME=__OPENSKY__ID__ >> .env
+        echo OPENSKY_NETWORK_PASSWORD=__OPENSKY__PASSWORD__ >> .env
+        echo REDIS_HOST=redis >> .env
+        echo REDIS_PORT=6379 >> .env
+        echo REDI_PASSWORD=blender_redis >> .env
+        echo REDIS_BROKER_URL=redis://default:blender_redis@redis:6379 >> .env
+        echo HEARTBEAT_RATE_SECS=7 >> .env
+        echo AMQP_URL=amqp://guest:guest@rabbitmq:5672/ >> .env
+        echo DSS_SELF_AUDIENCE=uspace-dev.flightblender.com >> .env
+        echo AUTH_DSS_CLIENT_ID=fjvDNmfeDF03myU3xH9pD3mM9 >> .env
+        echo AUTH_DSS_CLIENT_SECRET=eB3cF8eF4aP5vL1j__SOME_LONG_KEY__ >> .env
+        echo DSS_BASE_URL=https://dss.com >> .env
+        echo DSS_AUTH_URL=https://auth.caa.com >> .env
+        echo DSS_AUTH_TOKEN_ENDPOINT=/oauth/token >> .env
+        echo DSS_AUTH_JWKS_ENDPOINT=https://auth.caa.com/.well-known/jwks.json >> .env
+        echo BLENDER_FQDN=https://alpha.flightblender.com/ >> .env
         cat .env
     - name: Build the docker container
       run: |
