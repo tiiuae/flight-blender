@@ -34,4 +34,4 @@ jobs:
         docker-compose up -d
     - name: Run unit tests
       run: |
-        docker-compose exec -it celery pytest
+        docker-compose exec -T celery pytest
