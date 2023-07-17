@@ -22,10 +22,13 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
 
+    - name: 'Create a dummy env file'
+      run: |
+        touch .env
+        cat .env
     - name: Build the docker container
       run: |
         docker-compose build
     - name: Up the docker container
       run: |
         docker-compose up -d
-        
