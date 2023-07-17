@@ -22,13 +22,6 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
 
-    - name: 'Create an env file'
-      run: |
-        touch .env
-        echo SECRET_KEY=abc >> .env
-        echo ALLOWED_HOSTS=localhost:8000 >> .env
-        echo IS_DEBUG=1 >> .env
-        cat .env
     - name: Build the docker container
       run: |
         docker-compose build
