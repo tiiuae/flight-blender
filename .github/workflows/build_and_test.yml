@@ -27,6 +27,12 @@ jobs:
         touch .env
         echo SECRET_KEY=LONG_SECRET_KEY >> .env
         echo ALLOWED_HOSTS=HOSTNAME1,HOSTNAME2 >> .env
+        echo POSTGRES_USER=mydatabaseuser >> .env
+        echo POSTGRES_PASSWORD=mypassword >> .env
+        echo POSTGRES_DB=mydatabase >> .env
+        echo POSTGRES_HOST=myproject_db >> .env
+        echo PGDATA=/var/lib/postgresql/data/pgdata >> .env
+        
         echo IS_DEBUG=0 >> .env
         cat .env
     - name: Build the docker container
@@ -38,3 +44,4 @@ jobs:
     - name: Run unit tests
       run: |
         docker-compose exec -T celery pytest
+        
