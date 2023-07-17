@@ -10,7 +10,7 @@ from rest_framework.decorators import api_view
 from rest_framework.parsers import JSONParser
 from rest_framework.renderers import JSONRenderer
 from typing import List
-from django.http import HttpResponse,HttpRequest
+from django.http import HttpResponse, HttpRequest
 from .models import FlightDeclaration
 from dataclasses import asdict
 from geo_fence_operations import rtree_geo_fence_helper
@@ -25,7 +25,7 @@ from .serializers import (
     FlightDeclarationSerializer,
     FlightDeclarationApprovalSerializer,
     FlightDeclarationStateSerializer,
-    FlightDeclarationRequestSerializer
+    FlightDeclarationRequestSerializer,
 )
 from django.utils.decorators import method_decorator
 from .utils import OperationalIntentsConverter
@@ -38,7 +38,7 @@ logger = logging.getLogger("django")
 
 @api_view(["POST"])
 @requires_scopes(["blender.write"])
-def set_flight_declaration(request:HttpRequest):
+def set_flight_declaration(request: HttpRequest):
     """
     Add a new Flight Declaration. Submit a Flight Declaration into Flight Blender.
     """
@@ -46,14 +46,20 @@ def set_flight_declaration(request:HttpRequest):
         assert request.headers["Content-Type"] == "application/json"
     except AssertionError:
         msg = {"message": "Unsupported Media Type"}
-        return HttpResponse(json.dumps(msg), status=415, content_type="application/json")
+        return HttpResponse(
+            json.dumps(msg), status=415, content_type="application/json"
+        )
 
     stream = io.BytesIO(request.body)
     json_payload = JSONParser().parse(stream)
 
     serializer = FlightDeclarationRequestSerializer(data=json_payload)
     if not serializer.is_valid():
-        return HttpResponse(JSONRenderer().render(serializer.errors), status=400,content_type="application/json")
+        return HttpResponse(
+            JSONRenderer().render(serializer.errors),
+            status=400,
+            content_type="application/json",
+        )
 
     try:
         flight_declaration_geo_json = json_payload["flight_declaration_geo_json"]
@@ -65,10 +71,14 @@ def set_flight_declaration(request:HttpRequest):
         )
         return HttpResponse(msg, status=400)
 
-    submitted_by = None if "submitted_by" not in json_payload else json_payload["submitted_by"]
+    submitted_by = (
+        None if "submitted_by" not in json_payload else json_payload["submitted_by"]
+    )
     is_approved = False
     type_of_operation = (
-        0 if "type_of_operation" not in json_payload else json_payload["type_of_operation"]
+        0
+        if "type_of_operation" not in json_payload
+        else json_payload["type_of_operation"]
     )
     originating_party = (
         "No Flight Information"
@@ -136,8 +146,6 @@ def set_flight_declaration(request:HttpRequest):
                 }
             )
             return HttpResponse(op, status=400, content_type="application/json")
-
-
 
     default_state = 1  # Default state is Accepted
 
