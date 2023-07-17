@@ -4,6 +4,8 @@ from auth_helper.utils import requires_scopes
 # Create your views here.
 import json
 import arrow
+import logging
+import io
 from rest_framework.decorators import api_view
 from rest_framework.parsers import JSONParser
 from rest_framework.renderers import JSONRenderer
@@ -31,8 +33,6 @@ from .tasks import submit_flight_declaration_to_dss, send_operational_update_mes
 from .pagination import StandardResultsSetPagination
 from os import environ as env
 
-import logging
-import io
 logger = logging.getLogger("django")
 
 
