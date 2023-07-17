@@ -22,7 +22,7 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
 
-    - name: 'Create env file'
+    - name: 'Create a dummy env file'
       run: |
         touch .env
         cat .env
@@ -34,4 +34,4 @@ jobs:
         docker-compose up -d
     - name: Run unit tests
       run: |
-        docker-compose exec -it celery dddd
+        docker-compose exec -it celery pytest
