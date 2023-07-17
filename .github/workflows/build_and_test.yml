@@ -29,7 +29,10 @@ jobs:
     - name: Build the docker container
       run: |
         docker-compose build
-    - name: UnitTest with pytest
+    - name: Up the docker container
       run: |
         docker-compose up -d
+    - name: Run unit tests
+      run: |
         docker-compose exec -it celery pytest
+        
