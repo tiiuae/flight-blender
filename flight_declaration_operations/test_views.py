@@ -2,7 +2,7 @@
 This file contains unit tests for the views functions in flight_declaration_operations
 """
 import json
-from datetime import datetime
+import datetime
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
@@ -19,7 +19,7 @@ class FlightDeclarationTests(APITestCase):
     def setUp(self):
         self.client.defaults["HTTP_AUTHORIZATION"] = "Bearer " + JWT
         self.api_url = reverse("set_flight_declaration")
-        self.now = datetime.now().strftime("%Y-%m-%dT%H:%M:%SZ")
+        self.flight_time = (datetime.datetime.now() + datetime.timedelta(days=1)).strftime("%Y-%m-%dT%H:%M:%SZ")
         self.valid_flight_declaration_geo_json = {
             "type": "FeatureCollection",
             "features": [
@@ -99,8 +99,8 @@ class FlightDeclarationTests(APITestCase):
         The payload with invalid geometry.
         """
         valid_payload_with_invalid_geometry = {
-            "start_datetime": "2023-07-12T15:00:00+00:00",
-            "end_datetime": "2023-07-12T15:00:00+00:00",
+            "start_datetime": self.flight_time,
+            "end_datetime": self.flight_time,
             "flight_declaration_geo_json": {
                 "type": "FeatureCollection",
                 "features": [
@@ -144,8 +144,8 @@ class FlightDeclarationTests(APITestCase):
         The payload with invalid geometry.
         """
         valid_payload_with_invalid_geometry = {
-            "start_datetime": "2023-07-12T15:00:00+00:00",
-            "end_datetime": "2023-07-12T15:00:00+00:00",
+            "start_datetime": self.flight_time,
+            "end_datetime": self.flight_time,
             "flight_declaration_geo_json": {
                 "type": "FeatureCollection",
                 "features": [
@@ -187,8 +187,8 @@ class FlightDeclarationTests(APITestCase):
         The payload is valid.
         """
         valid_payload = {
-            "start_datetime": "2023-07-12T15:00:00+00:00",
-            "end_datetime": "2023-07-12T15:00:00+00:00",
+            "start_datetime": self.flight_time,
+            "end_datetime": self.flight_time,
             "flight_declaration_geo_json": self.valid_flight_declaration_geo_json,
         }
 
@@ -197,5 +197,6 @@ class FlightDeclarationTests(APITestCase):
             content_type="application/json",
             data=json.dumps(valid_payload),
         )
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.json()["message"], "Submitted Flight Declaration")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        
