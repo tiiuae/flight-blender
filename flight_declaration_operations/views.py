@@ -4,6 +4,8 @@ from auth_helper.utils import requires_scopes
 # Create your views here.
 import json
 import arrow
+import logging
+import io
 from rest_framework.decorators import api_view
 from rest_framework.parsers import JSONParser
 from rest_framework.renderers import JSONRenderer
@@ -63,7 +65,7 @@ def set_flight_declaration(request: HttpRequest):
             status=status.HTTP_400_BAD_REQUEST,
             content_type="application/json",
         )
-    
+
     flight_declaration_request = serializer.create(serializer.validated_data)
     is_approved = False
 
