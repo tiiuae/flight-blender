@@ -1,40 +1,36 @@
 # Create your views here.
-from auth_helper.utils import requires_scopes
-
+import io
 # Create your views here.
 import json
-import arrow
 import logging
-import io
+from dataclasses import asdict
+from os import environ as env
+from typing import List
+
+import arrow
+from auth_helper.utils import requires_scopes
+from django.http import HttpRequest, HttpResponse
+from django.utils.decorators import method_decorator
+from geo_fence_operations import rtree_geo_fence_helper
+from geo_fence_operations.models import GeoFence
+from rest_framework import generics, mixins, status
 from rest_framework.decorators import api_view
 from rest_framework.parsers import JSONParser
 from rest_framework.renderers import JSONRenderer
-from typing import List
-from django.http import HttpResponse, HttpRequest
-from .models import FlightDeclaration
-from dataclasses import asdict
-from geo_fence_operations import rtree_geo_fence_helper
-from geo_fence_operations.models import GeoFence
-from .flight_declarations_rtree_helper import FlightDeclarationRTreeIndexFactory
 from shapely.geometry import shape
-from .data_definitions import (
-    FlightDeclarationCreateResponse,
-)
-from rest_framework import mixins, generics, status
-from .serializers import (
-    FlightDeclarationSerializer,
-    FlightDeclarationApprovalSerializer,
-    FlightDeclarationStateSerializer,
-    FlightDeclarationRequestSerializer,
-)
-from django.utils.decorators import method_decorator
-from .utils import OperationalIntentsConverter
-from .tasks import submit_flight_declaration_to_dss, send_operational_update_message
-from .pagination import StandardResultsSetPagination
-from os import environ as env
 
-import logging
-import io
+from .data_definitions import FlightDeclarationCreateResponse
+from .flight_declarations_rtree_helper import \
+    FlightDeclarationRTreeIndexFactory
+from .models import FlightDeclaration
+from .pagination import StandardResultsSetPagination
+from .serializers import (FlightDeclarationApprovalSerializer,
+                          FlightDeclarationRequestSerializer,
+                          FlightDeclarationSerializer,
+                          FlightDeclarationStateSerializer)
+from .tasks import (send_operational_update_message,
+                    submit_flight_declaration_to_dss)
+from .utils import OperationalIntentsConverter
 
 logger = logging.getLogger("django")
 
