@@ -60,7 +60,9 @@ jobs:
       - name: Install black and isort
         run: pip install black isort
 
-      - name: Black and Sort changed files
+      - name: Black changed files
         run: |
           black ${{ steps.changed-files.outputs.all_changed_files }}
+      - name: Sort imports in changed files
+        run: |
           isort ${{ steps.changed-files.outputs.all_changed_files }}
