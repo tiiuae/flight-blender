@@ -302,14 +302,15 @@ class FlightDeclarationList(mixins.ListModelMixin, generics.GenericAPIView):
     def get_relevant_flight_declaration(
         self, start_date, end_date, view_port: List[float]
     ):
-        present = arrow.now()
         if start_date and end_date:
-            s_date = arrow.get(start_date, "YYYY-MM-DD")
-            e_date = arrow.get(end_date, "YYYY-MM-DD")
+            s_date = arrow.get(start_date, "YYYY-MM-DD HH:mm:ss")
+            e_date = arrow.get(end_date, "YYYY-MM-DD HH:mm:ss")
 
         else:
+            present = arrow.now()
             s_date = present.shift(days=-1)
             e_date = present.shift(days=1)
+
         all_fd_within_timelimits = FlightDeclaration.objects.filter(
             start_datetime__gte=s_date.isoformat(), end_datetime__lte=e_date.isoformat()
         )
