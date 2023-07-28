@@ -208,7 +208,7 @@ def set_flight_declaration(request: HttpRequest):
             is_approved = 0
 
     fo = FlightDeclaration(
-        operational_intent=json.dumps(asdict(partial_op_int_ref)),
+        operational_intent=json.loads(json.dumps(asdict(partial_op_int_ref))),
         bounds=bounds,
         type_of_operation=flight_declaration_request.type_of_operation,
         submitted_by=flight_declaration_request.submitted_by,
@@ -338,6 +338,9 @@ class FlightDeclarationList(mixins.ListModelMixin, generics.GenericAPIView):
         else:
             filtered_relevant_fd = all_fd_within_timelimits
 
+        
+        test_records = FlightDeclaration.objects.filter(operational_intent_test__volumes__0__volume__altitude_upper__value=10)
+        print(test_records)
         return filtered_relevant_fd
 
     def get_queryset(self):
