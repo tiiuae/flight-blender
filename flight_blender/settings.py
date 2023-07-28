@@ -10,13 +10,13 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/3.1/ref/settings/
 """
 
+from dotenv import load_dotenv, find_dotenv
 from pathlib import Path
 import os
 from datetime import datetime, timedelta
 import dj_database_url
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-from dotenv import load_dotenv, find_dotenv
 load_dotenv(find_dotenv())
 
 ENV_FILE = find_dotenv()
@@ -46,7 +46,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'rest_framework',    
+    'rest_framework',
     'flight_declaration_operations',
     'geo_fence_operations',
     'scd_operations',
@@ -91,21 +91,21 @@ WSGI_APPLICATION = 'flight_blender.wsgi.application'
 
 
 DATABASES = {
-      'default': {
+    'default': {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': os.path.join(BASE_DIR, "flight_blender.sqlite3")
-      }
+    }
 }
-DATABASES = {}
-USING_DOCKER_COMPOSE = os.environ.get("USING_DOCKER_COMPOSE",0)
-if USING_DOCKER_COMPOSE: 
+# DATABASES = {}
+USING_DOCKER_COMPOSE = os.environ.get("USING_DOCKER_COMPOSE", 0)
+if USING_DOCKER_COMPOSE:
     DATABASES = {
         "default": {
             "ENGINE": os.environ.get("DB_ENGINE", "django.db.backends.sqlite3"),
-            "NAME": os.environ.get("DB_DATABASE", os.path.join(BASE_DIR, "flight_blender.sqlite3"))            
+            "NAME": os.environ.get("DB_DATABASE", os.path.join(BASE_DIR, "flight_blender.sqlite3"))
         }
     }
-else: 
+else:
     DATABASES['default'] = dj_database_url.config(conn_max_age=600)
 
 # Password validation
@@ -148,9 +148,9 @@ STATIC_URL = '/static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
 if DEBUG:
-    BROKER_URL = os.getenv("REDIS_BROKER_URL",'redis://localhost:6379/')
+    BROKER_URL = os.getenv("REDIS_BROKER_URL", 'redis://localhost:6379/')
 else:
-    BROKER_URL = os.getenv("REDIS_BROKER_URL","redis://redis:6379/")
+    BROKER_URL = os.getenv("REDIS_BROKER_URL", "redis://redis:6379/")
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
@@ -163,7 +163,7 @@ LOGGING = {
     'version': 1,
     # Version of logging
     'disable_existing_loggers': False,
-    #disable logging 
+    # disable logging
     # Handlers #############################################################
     'handlers': {
         'file': {
@@ -179,10 +179,9 @@ LOGGING = {
     # Loggers ####################################################################
     'loggers': {
         'django': {
-            'handlers': ['file', 'console'],            
+            'handlers': ['file', 'console'],
             'propagate': True,
             'level': os.getenv('DJANGO_LOG_LEVEL', 'ERROR')
         },
     },
 }
-
