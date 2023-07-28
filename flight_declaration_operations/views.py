@@ -1,6 +1,5 @@
 # Create your views here.
 import io
-
 # Create your views here.
 import json
 import logging
@@ -10,6 +9,7 @@ from typing import List
 
 import arrow
 from auth_helper.utils import requires_scopes
+from django.db.models import Q
 from django.http import HttpRequest, HttpResponse
 from django.utils.decorators import method_decorator
 from geo_fence_operations import rtree_geo_fence_helper
@@ -21,16 +21,16 @@ from rest_framework.renderers import JSONRenderer
 from shapely.geometry import shape
 
 from .data_definitions import FlightDeclarationCreateResponse
-from .flight_declarations_rtree_helper import FlightDeclarationRTreeIndexFactory
+from .flight_declarations_rtree_helper import \
+    FlightDeclarationRTreeIndexFactory
 from .models import FlightDeclaration
 from .pagination import StandardResultsSetPagination
-from .serializers import (
-    FlightDeclarationApprovalSerializer,
-    FlightDeclarationRequestSerializer,
-    FlightDeclarationSerializer,
-    FlightDeclarationStateSerializer,
-)
-from .tasks import send_operational_update_message, submit_flight_declaration_to_dss
+from .serializers import (FlightDeclarationApprovalSerializer,
+                          FlightDeclarationRequestSerializer,
+                          FlightDeclarationSerializer,
+                          FlightDeclarationStateSerializer)
+from .tasks import (send_operational_update_message,
+                    submit_flight_declaration_to_dss)
 from .utils import OperationalIntentsConverter
 
 logger = logging.getLogger("django")
@@ -300,8 +300,14 @@ class FlightDeclarationList(mixins.ListModelMixin, generics.GenericAPIView):
     pagination_class = StandardResultsSetPagination
 
     def get_relevant_flight_declaration(
-        self, start_date, end_date, view_port: List[float]
+        self,
+        start_date,
+        end_date,
+        view_port: List[float],
+        max_alt: int = None,
+        min_alt: int = None,
     ):
+        filter_query = Q()
         if start_date and end_date:
             s_date = arrow.get(start_date, "YYYY-MM-DD HH:mm:ss")
             e_date = arrow.get(end_date, "YYYY-MM-DD HH:mm:ss")
@@ -314,8 +320,16 @@ class FlightDeclarationList(mixins.ListModelMixin, generics.GenericAPIView):
         all_fd_within_timelimits = FlightDeclaration.objects.filter(
             start_datetime__gte=s_date.isoformat(), end_datetime__lte=e_date.isoformat()
         )
+        filter_query.add(
+            Q(
+                start_datetime__gte=s_date.isoformat(),
+                end_datetime__lte=e_date.isoformat(),
+            ),
+            Q.AND,
+        )
 
         logging.info("Found %s flight declarations" % len(all_fd_within_timelimits))
+
         if view_port:
             INDEX_NAME = "opint_idx"
             my_rtree_helper = FlightDeclarationRTreeIndexFactory(index_name=INDEX_NAME)
@@ -331,21 +345,37 @@ class FlightDeclarationList(mixins.ListModelMixin, generics.GenericAPIView):
                 relevant_id_set.append(i["flight_declaration_id"])
 
             my_rtree_helper.clear_rtree_index()
-            filtered_relevant_fd = FlightDeclaration.objects.filter(
-                id__in=relevant_id_set
+
+            filter_query.add(Q(id__in=relevant_id_set), Q.AND)
+
+        if max_alt:
+            filter_query.add(
+                Q(
+                    operational_intent__volumes__0__volume__altitude_upper__value__lte=int(
+                        max_alt
+                    )
+                ),
+                Q.AND,
+            )
+        if min_alt:
+            filter_query.add(
+                Q(
+                    operational_intent__volumes__0__volume__altitude_lower__value__gte=int(
+                        min_alt
+                    )
+                ),
+                Q.AND,
             )
 
-        else:
-            filtered_relevant_fd = all_fd_within_timelimits
-
-        
-        test_records = FlightDeclaration.objects.filter(operational_intent_test__volumes__0__volume__altitude_upper__value=10)
-        print(test_records)
-        return filtered_relevant_fd
+        filtered = FlightDeclaration.objects.filter(filter_query)
+        return filtered
 
     def get_queryset(self):
         start_date = self.request.query_params.get("start_date", None)
         end_date = self.request.query_params.get("end_date", None)
+
+        max_alt = self.request.query_params.get("max_alt", None)
+        min_alt = self.request.query_params.get("min_alt", None)
 
         view = self.request.query_params.get("view", None)
         view_port = []
@@ -353,7 +383,11 @@ class FlightDeclarationList(mixins.ListModelMixin, generics.GenericAPIView):
             view_port = [float(i) for i in view.split(",")]
 
         responses = self.get_relevant_flight_declaration(
-            view_port=view_port, start_date=start_date, end_date=end_date
+            view_port=view_port,
+            start_date=start_date,
+            end_date=end_date,
+            max_alt=max_alt,
+            min_alt=min_alt,
         )
         return responses
 
