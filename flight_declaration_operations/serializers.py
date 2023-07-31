@@ -2,7 +2,9 @@
 This module holds the Serialization classes to be used in Flight Declaration operations.
 """
 import json
+
 from rest_framework import serializers
+
 from .models import FlightDeclaration
 from .utils import OperationalIntentsConverter
 
