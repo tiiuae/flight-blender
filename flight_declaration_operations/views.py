@@ -1,5 +1,6 @@
 # Create your views here.
 import io
+
 # Create your views here.
 import json
 import logging
@@ -21,16 +22,16 @@ from rest_framework.renderers import JSONRenderer
 from shapely.geometry import shape
 
 from .data_definitions import FlightDeclarationCreateResponse
-from .flight_declarations_rtree_helper import \
-    FlightDeclarationRTreeIndexFactory
+from .flight_declarations_rtree_helper import FlightDeclarationRTreeIndexFactory
 from .models import FlightDeclaration
 from .pagination import StandardResultsSetPagination
-from .serializers import (FlightDeclarationApprovalSerializer,
-                          FlightDeclarationRequestSerializer,
-                          FlightDeclarationSerializer,
-                          FlightDeclarationStateSerializer)
-from .tasks import (send_operational_update_message,
-                    submit_flight_declaration_to_dss)
+from .serializers import (
+    FlightDeclarationApprovalSerializer,
+    FlightDeclarationRequestSerializer,
+    FlightDeclarationSerializer,
+    FlightDeclarationStateSerializer,
+)
+from .tasks import send_operational_update_message, submit_flight_declaration_to_dss
 from .utils import OperationalIntentsConverter
 
 logger = logging.getLogger("django")
@@ -238,7 +239,7 @@ def set_flight_declaration(request: HttpRequest):
             "Self deconfliction failed, this declaration cannot be sent to the DSS system.."
         )
         if amqp_connection_url:
-            self_deconfliction_failed_msg = "Self deconfliction failed for operation {operation_id} did not pass self-deconfliction, there are existing operationd declared".format(
+            self_deconfliction_failed_msg = "Self deconfliction failed for operation {operation_id} did not pass self-deconfliction, there are existing operations declared".format(
                 operation_id=flight_declaration_id
             )
             send_operational_update_message.delay(

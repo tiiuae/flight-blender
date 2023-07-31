@@ -202,16 +202,53 @@ class FlightDeclarationPostTests(APITestCase):
         self.assertEqual(response.json()["message"], "Submitted Flight Declaration")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
+
 @pytest.mark.usefixtures("create_flight_plan")
 class FlightDeclarationGetTests(APITestCase):
     def setUp(self):
         self.client.defaults["HTTP_AUTHORIZATION"] = "Bearer " + JWT
         self.api_url = reverse("flight_declaration")
 
-    def test_count_flight_plans(self):
+    def test_count_flight_plans_with_default_filter(self):
         response = self.client.get(
             self.api_url,
             content_type="application/json",
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.json()["total"], 5)
+        self.assertEqual(response.json()["total"], 3)
+
+    def test_count_flight_plans_with_altitude_filter_1(self):
+        response = self.client.get(
+            self.api_url + "?min_alt=90",
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.json()["total"], 1)
+
+    def test_count_flight_plans_with_altitude_filter_2(self):
+        response = self.client.get(
+            self.api_url + "?max_alt=100",
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.json()["total"], 2)
+
+    def test_count_flight_plans_with_altitude_filter_3(self):
+        response = self.client.get(
+            self.api_url + "?max_alt=100&min_alt=90",
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.json()["total"], 1)
+
+    def test_count_flight_plans_with_datetime_filter_1(self):
+        flight_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        response = self.client.get(
+            self.api_url
+            + "?start_date={flight_time}&end_date={flight_time}".format(
+                flight_time=flight_time
+            ),
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.json()["total"], 3)
