@@ -4,6 +4,7 @@ This file contains unit tests for the views functions in flight_declaration_oper
 import json
 import datetime
 from django.urls import reverse
+import pytest
 from rest_framework import status
 from rest_framework.test import APITestCase
 
@@ -200,3 +201,17 @@ class FlightDeclarationPostTests(APITestCase):
         )
         self.assertEqual(response.json()["message"], "Submitted Flight Declaration")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+@pytest.mark.usefixtures("create_flight_plan")
+class FlightDeclarationGetTests(APITestCase):
+    def setUp(self):
+        self.client.defaults["HTTP_AUTHORIZATION"] = "Bearer " + JWT
+        self.api_url = reverse("flight_declaration")
+
+    def test_count_flight_plans(self):
+        response = self.client.get(
+            self.api_url,
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.json()["total"], 5)
