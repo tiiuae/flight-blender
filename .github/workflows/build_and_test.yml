@@ -8,7 +8,6 @@ on:
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
     timeout-minutes: 30
     strategy:
@@ -23,10 +22,10 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
 
-    - name: 'Create a dummy env file'
+    - name: 'Create an env file from secrets'
       run: |
         touch .env
-        cat .env
+        echo "${{ secrets.ENV_FILE }}" > .env
     - name: Build the docker container
       run: |
         docker-compose build
@@ -66,3 +65,19 @@ jobs:
       - name: Sort imports in changed files
         run: |
           isort ${{ steps.changed-files.outputs.all_changed_files }}
+  
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      max-parallel: 4
+      matrix:
+        python-version: [3.8]
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v3
+      - name: Install Dev dependancies
+        run: pip install --upgrade -r requirements_dev.txt
+      - name: Run tests
+        run: pytest .
+          
