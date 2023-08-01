@@ -90,4 +90,4 @@ jobs:
       - name: Install Dev dependancies
         run: pip install --upgrade -r requirements_dev.txt
       - name: Run tests
-        run: pytest .
+        run: pytest
