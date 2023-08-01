@@ -66,6 +66,7 @@ jobs:
             echo "No python file changes detected. Skipping black formatting."
           else
             black ${{ steps.changed-files.outputs.all_changed_files }}
+          fi
       - name: Sort imports in changed files
         run: |
           if ${{ steps.changed-files.outputs.all_changed_files_count }} == 0
@@ -73,6 +74,7 @@ jobs:
             echo "No python file changes detected. Skipping import sorting."
           else
             isort ${{ steps.changed-files.outputs.all_changed_files }}
+          fi
   
   test:
     runs-on: ubuntu-latest
