@@ -32,6 +32,11 @@ jobs:
     - name: Up the docker container
       run: |
         docker-compose up -d
+    - name: Run unit tests on the container
+      run: |
+        docker exec -it flight-blender-web-1 python -m pip install --upgrade -r requirements_dev.txt
+        docker exec -it flight-blender-web-1 pytest
+
   lint:
     runs-on: ubuntu-latest
     timeout-minutes: 30
@@ -77,21 +82,21 @@ jobs:
           fi
         shell: bash
   
-  test:
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    strategy:
-      max-parallel: 4
-      matrix:
-        python-version: [3.8]
-    steps:
-      - name: Checkout branch
-        uses: actions/checkout@v3
-      - name: Install Dev dependancies
-        run: pip install --upgrade -r requirements_dev.txt
-      - name: 'Create an env file from secrets'
-        run: |
-          touch .env
-          echo "${{ secrets.ENV_FILE }}" > .env
-      - name: Run tests
-        run: pytest
+  # test:
+  #   runs-on: ubuntu-latest
+  #   timeout-minutes: 30
+  #   strategy:
+  #     max-parallel: 4
+  #     matrix:
+  #       python-version: [3.8]
+  #   steps:
+  #     - name: Checkout branch
+  #       uses: actions/checkout@v3
+  #     - name: Install Dev dependancies
+  #       run: pip install --upgrade -r requirements_dev.txt
+  #     - name: 'Create an env file from secrets'
+  #       run: |
+  #         touch .env
+  #         echo "${{ secrets.ENV_FILE }}" > .env
+  #     - name: Run tests
+  #       run: pytest
