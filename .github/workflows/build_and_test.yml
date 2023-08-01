@@ -65,7 +65,7 @@ jobs:
           then
             echo "No python file changes detected. Skipping black formatting."
           else
-            black ${{ steps.changed-files.outputs.all_changed_files }}
+            echo "There are file changes"
           fi
       - name: Sort imports in changed files
         run: |
