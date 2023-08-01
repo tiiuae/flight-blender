@@ -245,11 +245,12 @@ class FlightDeclarationGetTests(APITestCase):
         self.assertEqual(response.json()["total"], 1)
 
     def test_count_flight_plans_with_datetime_filter_1(self):
-        flight_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        flight_s_time ="2023-08-01 06:00:00"
+        flight_e_time="2023-08-01 23:00:00"
         response = self.client.get(
             self.api_url
-            + "?start_date={flight_time}&end_date={flight_time}".format(
-                flight_time=flight_time
+            + "?start_date={flight_s_time}&end_date={flight_e_time}".format(
+                flight_s_time=flight_s_time,flight_e_time=flight_e_time
             ),
             content_type="application/json",
         )
