@@ -62,18 +62,18 @@ jobs:
       - name: Black formatting the changed files
         run: |
           if ${{ steps.changed-files.outputs.any_changed }}; then
-          echo "Python file changes detected. Runnin gblack formatting..."
+          echo "Python file changes detected. Running black formatting..."
           black ${{ steps.changed-files.outputs.all_changed_files }}
           else
           echo "No Python file changes detected. Skipping black formatting."
           fi
       - name: Sort imports in changed files
         run: |
-          if ${{ steps.changed-files.outputs.any_changed }} false
-          then
-            echo "No python file changes detected. Skipping import sorting."
+          if ${{ steps.changed-files.outputs.any_changed }}; then
+          echo "Python file changes detected. Running import formatting..."
+          isort ${{ steps.changed-files.outputs.all_changed_files }}
           else
-            isort ${{ steps.changed-files.outputs.all_changed_files }}
+          echo "No Python file changes detected. Skipping import formatting."
           fi
         shell: bash
   
