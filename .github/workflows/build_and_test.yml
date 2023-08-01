@@ -32,10 +32,13 @@ jobs:
     - name: Up the docker container
       run: |
         docker-compose up -d
+    - name: List running containers
+      run: |
+        docker ps --format '{{.Names}}'
     - name: Run unit tests on the container
       run: |
-        docker exec -it flight-blender-web-1 python -m pip install --upgrade -r requirements_dev.txt
-        docker exec -it flight-blender-web-1 pytest
+        docker exec -it flight-blender_web_1 python -m pip install --upgrade -r requirements_dev.txt
+        docker exec -it flight-blender_web_1 pytest
 
   lint:
     runs-on: ubuntu-latest
