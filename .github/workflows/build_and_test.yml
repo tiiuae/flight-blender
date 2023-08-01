@@ -61,10 +61,18 @@ jobs:
 
       - name: Black formatting the changed files
         run: |
-          black ${{ steps.changed-files.outputs.all_changed_files }}
+          if ${{ steps.changed-files.outputs.all_changed_files_count }} == 0
+          then
+            echo "No python file changes detected. Skipping black formatting."
+          else
+            black ${{ steps.changed-files.outputs.all_changed_files }}
       - name: Sort imports in changed files
         run: |
-          isort ${{ steps.changed-files.outputs.all_changed_files }}
+          if ${{ steps.changed-files.outputs.all_changed_files_count }} == 0
+          then
+            echo "No python file changes detected. Skipping import sorting."
+          else
+            isort ${{ steps.changed-files.outputs.all_changed_files }}
   
   test:
     runs-on: ubuntu-latest
@@ -80,4 +88,3 @@ jobs:
         run: pip install --upgrade -r requirements_dev.txt
       - name: Run tests
         run: pytest .
-          
