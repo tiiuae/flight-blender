@@ -205,6 +205,9 @@ class FlightDeclarationPostTests(APITestCase):
 
 @pytest.mark.usefixtures("create_flight_plan")
 class FlightDeclarationGetTests(APITestCase):
+    """
+    Contains tests for class FlightDeclarationList
+    """
     def setUp(self):
         self.client.defaults["HTTP_AUTHORIZATION"] = "Bearer " + JWT
         self.api_url = reverse("flight_declaration")
