@@ -61,7 +61,7 @@ jobs:
 
       - name: Black formatting the changed files
         run: |
-          if ${{ steps.changed-files.outputs.any_changed }} false
+          if ${{ steps.changed-files.outputs.any_changed }} == false
           then
             echo "No python file changes detected. Skipping black formatting."
           else
