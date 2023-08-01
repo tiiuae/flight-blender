@@ -1,4 +1,4 @@
-name: Build the API and run Lint/Tests
+name: Build the containers and run Linting, Testing.
 
 on:
   push:
@@ -37,7 +37,7 @@ jobs:
         docker ps --format '{{.Names}}'
     - name: Run unit tests on the container
       run: |
-        docker exec -i flight-blender_web_1 python -m pip install requirements_dev.txt
+        docker exec -i flight-blender_web_1 python -m pip install -r requirements_dev.txt
         docker exec -i flight-blender_web_1 pytest
 
   lint:
