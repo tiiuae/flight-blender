@@ -118,12 +118,10 @@ class ResponseSigningOperations:
 
         algorithms = "RS256"
         private_key = env.get("SECRET_KEY", None)
-        print(private_key)
         if private_key:
             try:
                 key = jwk.JWK.from_pem(private_key.encode("utf8"))
-            except Exception as e:
-                print(e)
+            except Exception:
                 key = None
 
         if key:
