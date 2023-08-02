@@ -87,12 +87,6 @@ class MessageVerifier:
                     key_resolver=MyHTTPSignatureKeyResolver(jwk=jwk),
                 )
                 verifier.verify(r)
-                # try:
-                # verifier.verify(request)
-                # except InvalidSignature as i_sig:
-                # logger.error(i_sig)
-                # return False
-
             return True
         else:
             return False
