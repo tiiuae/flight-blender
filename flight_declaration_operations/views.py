@@ -33,7 +33,7 @@ from .serializers import (
 )
 from .tasks import send_operational_update_message, submit_flight_declaration_to_dss
 from .utils import OperationalIntentsConverter
-
+from flight_feed_operations import pki_helper,data_definitions
 logger = logging.getLogger("django")
 
 
@@ -266,6 +266,26 @@ def set_flight_declaration(request: HttpRequest):
     # TODO: Should the return status code be 201 since it creates a new record?
     return HttpResponse(op, status=status.HTTP_200_OK, content_type="application/json")
 
+
+@api_view(["POST"])
+@requires_scopes(["blender.write"])
+def set_signed_flight_declaration(request: HttpRequest):
+
+    request = request._request
+    request_verifier = pki_helper.MessageVerifier()
+    response_signer = pki_helper.ResponseSigningOperations()
+
+    request_verified = request_verifier.verify_message(request)
+    if not request_verified:
+        message = data_definitions.MessageVerificationFailedResponse(message= "Could not verify against public keys setup in Flight Blender")
+        message=asdict(message)
+        return HttpResponse(
+            json.dumps(message),
+            status=status.HTTP_400_BAD_REQUEST,
+            content_type="application/json",
+        )
+    response = set_flight_declaration(request)
+    return response
 
 @method_decorator(requires_scopes(["blender.write"]), name="dispatch")
 class FlightDeclarationApproval(mixins.UpdateModelMixin, generics.GenericAPIView):
