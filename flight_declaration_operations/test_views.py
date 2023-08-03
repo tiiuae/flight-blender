@@ -1,10 +1,11 @@
 """
 This file contains unit tests for the views functions in flight_declaration_operations
 """
-import json
 import datetime
-from django.urls import reverse
+import json
+
 import pytest
+from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
 
