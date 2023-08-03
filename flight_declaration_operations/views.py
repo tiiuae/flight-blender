@@ -1,11 +1,9 @@
 # Create your views here.
 import io
-
 # Create your views here.
 import json
 import logging
 from dataclasses import asdict
-from os import environ as env
 from typing import List
 
 import arrow
@@ -15,25 +13,23 @@ from django.utils.decorators import method_decorator
 from rest_framework import generics, mixins, status
 from rest_framework.decorators import api_view
 from rest_framework.parsers import JSONParser
-from rest_framework.renderers import JSONRenderer
 from shapely.geometry import shape
 
 from auth_helper.utils import requires_scopes
-from flight_feed_operations import data_definitions, pki_helper
 from geo_fence_operations import rtree_geo_fence_helper
 from geo_fence_operations.models import GeoFence
 
 from .data_definitions import FlightDeclarationCreateResponse
-from .flight_declarations_rtree_helper import FlightDeclarationRTreeIndexFactory
+from .flight_declarations_rtree_helper import \
+    FlightDeclarationRTreeIndexFactory
 from .models import FlightDeclaration
 from .pagination import StandardResultsSetPagination
-from .serializers import (
-    FlightDeclarationApprovalSerializer,
-    FlightDeclarationRequestSerializer,
-    FlightDeclarationSerializer,
-    FlightDeclarationStateSerializer,
-)
-from .tasks import send_operational_update_message, submit_flight_declaration_to_dss
+from .serializers import (FlightDeclarationApprovalSerializer,
+                          FlightDeclarationRequestSerializer,
+                          FlightDeclarationSerializer,
+                          FlightDeclarationStateSerializer)
+from .tasks import (send_operational_update_message,
+                    submit_flight_declaration_to_dss)
 from .utils import OperationalIntentsConverter
 
 logger = logging.getLogger("django")
