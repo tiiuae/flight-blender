@@ -16,6 +16,7 @@ from rest_framework.parsers import JSONParser
 from shapely.geometry import shape
 
 from auth_helper.utils import requires_scopes
+from flight_feed_operations import pki_helper
 from geo_fence_operations import rtree_geo_fence_helper
 from geo_fence_operations.models import GeoFence
 
@@ -296,11 +297,43 @@ def set_flight_declaration(request: HttpRequest):
 @api_view(["POST"])
 @requires_scopes(["blender.write"])
 def set_signed_flight_declaration(request: HttpRequest):
-    return HttpResponse(
-        json.dumps({"status": "_TO_BE_IMPLEMENTED_"}),
-        status=status.HTTP_200_OK,
-        content_type="application/json",
+    payload_verifier = pki_helper.MessageVerifier()
+    response_signer = pki_helper.ResponseSigningOperations()
+
+    # Verify the payload
+    payload_verified = payload_verifier.verify_message(request)
+    if not payload_verified:
+        return HttpResponse(
+            json.dumps(
+                {
+                    "message": "Could not verify against public keys setup in Flight Blender"
+                }
+            ),
+            status=status.HTTP_400_BAD_REQUEST,
+            content_type="application/json",
+        )
+
+    # TODO Add the normal flow to set a new flight plan
+
+    creation_response = FlightDeclarationCreateResponse(
+        id="_TO_BE_REPLACED_WITH_ACTUAL_FP_ID_",
+        message="Submitted Flight Declaration",
+        is_approved=False,  # TODO Replace with actual approval value
+        state=1,  # TODO Replace with actual state value
     )
+
+    # Sign the response
+    creation_response = asdict(creation_response)
+    content_digest = response_signer.generate_content_digest(creation_response)
+    signed_data = response_signer.sign_json_via_django(creation_response)
+    creation_response["signed"] = signed_data
+    http_response = HttpResponse(
+        creation_response, status=status.HTTP_200_OK, content_type="application/json"
+    )
+    http_response["Content-Digest"] = content_digest
+    http_response["req"] = request.headers["Signature"]
+
+    return http_response
 
 
 @method_decorator(requires_scopes(["blender.write"]), name="dispatch")
