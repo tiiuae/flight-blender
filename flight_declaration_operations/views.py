@@ -313,7 +313,7 @@ def set_signed_flight_declaration(request: HttpRequest):
             content_type="application/json",
         )
 
-    # TODO Add the normal flow to set a new flight plan
+    # TODO Add the normal flow to set a new flight declaration
 
     creation_response = FlightDeclarationCreateResponse(
         id="_TO_BE_REPLACED_WITH_ACTUAL_FP_ID_",
