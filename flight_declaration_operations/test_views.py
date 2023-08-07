@@ -202,6 +202,58 @@ class FlightDeclarationPostTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
 
+class SignedflightDeclarationPostTests(APITestCase):
+    def setUp(self):
+        self.client.defaults["HTTP_AUTHORIZATION"] = "Bearer " + JWT
+        self.api_url = reverse("set_signed_flight_declaration")
+        self.flight_time = (
+            datetime.datetime.now() + datetime.timedelta(days=1)
+        ).strftime("%Y-%m-%dT%H:%M:%SZ")
+        self.valid_flight_declaration_geo_json = {
+            "type": "FeatureCollection",
+            "features": [
+                {
+                    "type": "Feature",
+                    "properties": {
+                        "id": "0",
+                        "start_datetime": "2023-02-03T16:29:08.842Z",
+                        "end_datetime": "2023-02-03T16:29:08.842Z",
+                        "max_altitude": {"meters": 152.4, "datum": "agl"},
+                        "min_altitude": {"meters": 102.4, "datum": "agl"},
+                    },
+                    "geometry": {
+                        "coordinates": [
+                            [15.776083042366338, 1.18379149158649],
+                            [15.799823306116707, 1.2159036290562142],
+                            [15.812391681043636, 1.2675614791659342],
+                            [15.822167083764754, 1.3024648511225934],
+                            [15.82635654207283, 1.3220105290909174],
+                        ],
+                        "type": "LineString",
+                    },
+                }
+            ],
+        }
+
+    def test_unsigned_payload(self):
+        valid_payload = {
+            "start_datetime": self.flight_time,
+            "end_datetime": self.flight_time,
+            "flight_declaration_geo_json": self.valid_flight_declaration_geo_json,
+        }
+
+        response = self.client.post(
+            self.api_url,
+            content_type="application/json",
+            data=json.dumps(valid_payload),
+        )
+        self.assertEqual(
+            response.json()["message"],
+            "Could not verify against public keys setup in Flight Blender",
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+
 @pytest.mark.usefixtures("create_flight_plan")
 class FlightDeclarationGetTests(APITestCase):
     """
