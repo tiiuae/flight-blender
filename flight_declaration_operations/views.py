@@ -343,6 +343,7 @@ class FlightDeclarationList(mixins.ListModelMixin, generics.GenericAPIView):
         view_port: List[float],
         max_alt: int = None,
         min_alt: int = None,
+        states: List[int] = None,
     ):
         filter_query = Q()
         if start_date and end_date:
@@ -403,7 +404,14 @@ class FlightDeclarationList(mixins.ListModelMixin, generics.GenericAPIView):
                 ),
                 Q.AND,
             )
-
+        if states:
+            filter_query.add(
+                Q(
+                    state__in=states
+                ),
+                Q.AND,
+            )
+        
         filtered = FlightDeclaration.objects.filter(filter_query)
         return filtered
 
@@ -415,6 +423,11 @@ class FlightDeclarationList(mixins.ListModelMixin, generics.GenericAPIView):
         min_alt = self.request.query_params.get("min_alt", None)
 
         view = self.request.query_params.get("view", None)
+        state_str = self.request.query_params.get('states')
+
+        states = []
+        if state_str:
+            states = state_str.split(',')
         view_port = []
         if view:
             view_port = [float(i) for i in view.split(",")]
@@ -425,6 +438,7 @@ class FlightDeclarationList(mixins.ListModelMixin, generics.GenericAPIView):
             end_date=end_date,
             max_alt=max_alt,
             min_alt=min_alt,
+            states=states,
         )
         return responses
 
