@@ -202,7 +202,7 @@ class FlightDeclarationPostTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
 
-class SignedflightDeclarationPostTests(APITestCase):
+class SignedFlightDeclarationPostTests(APITestCase):
     def setUp(self):
         self.client.defaults["HTTP_AUTHORIZATION"] = "Bearer " + JWT
         self.api_url = reverse("set_signed_flight_declaration")
