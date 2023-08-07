@@ -313,13 +313,65 @@ def set_signed_flight_declaration(request: HttpRequest):
             content_type="application/json",
         )
 
-    # TODO Add the normal flow to set a new flight declaration
+    try:
+        assert request.headers["Content-Type"] == "application/json"
+    except AssertionError:
+        msg = {"message": "Unsupported Media Type"}
+        return HttpResponse(
+            json.dumps(msg),
+            status=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
+            content_type="application/json",
+        )
+
+    stream = io.BytesIO(request.body)
+    json_payload = JSONParser().parse(stream)
+
+    # Validate the JSON payload
+    parsed_fd_request, parse_error = _parse_flight_declaration_request(json_payload)
+
+    if parse_error:
+        return HttpResponse(
+            json.dumps(parse_error),
+            status=status.HTTP_400_BAD_REQUEST,
+            content_type="application/json",
+        )
+
+    default_state = 1  # Default state is Accepted
+    (
+        partial_op_int_ref,
+        bounds,
+        all_relevant_fences,
+        all_relevant_declarations,
+        is_approved,
+    ) = _get_operational_intent(parsed_fd_request)
+
+    fo = FlightDeclaration(
+        operational_intent=json.loads(json.dumps(asdict(partial_op_int_ref))),
+        bounds=bounds,
+        type_of_operation=parsed_fd_request.type_of_operation,
+        submitted_by=parsed_fd_request.submitted_by,
+        is_approved=is_approved,
+        start_datetime=parsed_fd_request.start_datetime,
+        end_datetime=parsed_fd_request.end_datetime,
+        originating_party=parsed_fd_request.originating_party,
+        flight_declaration_raw_geojson=json.dumps(
+            parsed_fd_request.flight_declaration_geo_json
+        ),
+        state=default_state,
+    )
+    fo.save()
+
+    # Send flight creation notifications
+    flight_declaration_id = str(fo.id)
+    _send_fd_creation_notifications(
+        flight_declaration_id, all_relevant_fences, all_relevant_declarations
+    )
 
     creation_response = FlightDeclarationCreateResponse(
-        id="_TO_BE_REPLACED_WITH_ACTUAL_FP_ID_",
+        id=flight_declaration_id,
         message="Submitted Flight Declaration",
-        is_approved=False,  # TODO Replace with actual approval value
-        state=1,  # TODO Replace with actual state value
+        is_approved=is_approved,
+        state=default_state,
     )
 
     # Sign the response
