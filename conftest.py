@@ -1,20 +1,18 @@
-
 import json
 
 import pytest
-
 from flight_declaration_operations import models as fdo_models
+from flight_feed_operations import models as ffo_models
 
 
 @pytest.mark.django_db
 @pytest.fixture(scope="function")
 def create_flight_plan(db) -> None:
-
     # Flight plan 1
     max_alt = 100
     min_alt = 90
-    flight_s_time ="2023-08-01T9:00:00+00:00"
-    flight_e_time="2023-08-01T10:00:00+00:00"
+    flight_s_time = "2023-08-01T9:00:00+00:00"
+    flight_e_time = "2023-08-01T10:00:00+00:00"
     fdo_models.FlightDeclaration.objects.create(
         operational_intent={
             "volumes": [
@@ -95,8 +93,8 @@ def create_flight_plan(db) -> None:
 
     max_alt = 120
     min_alt = 70
-    flight_s_time ="2023-08-01T11:00:00+00:00"
-    flight_e_time="2023-08-01T12:00:00+00:00"
+    flight_s_time = "2023-08-01T11:00:00+00:00"
+    flight_e_time = "2023-08-01T12:00:00+00:00"
     fdo_models.FlightDeclaration.objects.create(
         operational_intent={
             "volumes": [
@@ -176,8 +174,8 @@ def create_flight_plan(db) -> None:
     # Flight plan 2
     max_alt = 100
     min_alt = 80
-    flight_s_time ="2023-08-01T15:00:00+00:00"
-    flight_e_time="2023-08-01T16:00:00+00:00"
+    flight_s_time = "2023-08-01T15:00:00+00:00"
+    flight_e_time = "2023-08-01T16:00:00+00:00"
     fdo_models.FlightDeclaration.objects.create(
         operational_intent={
             "volumes": [
@@ -256,3 +254,11 @@ def create_flight_plan(db) -> None:
     )
     yield
     fdo_models.FlightDeclaration.objects.all().delete()
+
+
+@pytest.mark.django_db
+@pytest.fixture(scope="function")
+def create_public_keys(db) -> None:
+    ffo_models.SignedTelmetryPublicKey.objects.create(
+        key_id="NjVBRjY5MDlCMUIwNzU4RTA2QzZFMDQ4QzQ2MDAyQjVDNjk1RTM2Qg", url="http://get_dummy_keys.com", is_active=True
+    )
