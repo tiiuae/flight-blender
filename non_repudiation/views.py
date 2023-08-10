@@ -11,3 +11,9 @@ from .serializers import PublicKeySerializer
 class PublicKeyList(generics.ListCreateAPIView):
     queryset = PublicKey.objects.all()
     serializer_class = PublicKeySerializer
+
+
+@method_decorator(requires_scopes(["blender.read", "blender.write"]), name="dispatch")
+class PublicKeyDetail(generics.RetrieveUpdateDestroyAPIView):
+    queryset = PublicKey.objects.all()
+    serializer_class = PublicKeySerializer
