@@ -285,4 +285,3 @@ def create_public_keys(db) -> None:
     )
     yield
     nr_models.PublicKey.objects.all().delete()
-    
