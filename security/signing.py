@@ -8,8 +8,11 @@ import jwt
 import requests
 from django.core.signing import Signer
 from dotenv import find_dotenv, load_dotenv
-from http_message_signatures import (HTTPMessageVerifier,
-                                     HTTPSignatureKeyResolver, algorithms)
+from http_message_signatures import (
+    HTTPMessageVerifier,
+    HTTPSignatureKeyResolver,
+    algorithms,
+)
 from jwcrypto import jwk, jws
 from jwcrypto.common import json_encode
 
@@ -93,6 +96,7 @@ class ResponseSigningOperations:
         self.signing_url = env.get("FLIGHT_PASSPORT_SIGNING_URL", None)
         self.signing_client_id = env.get("FLIGHT_PASSPORT_SIGNING_CLIENT_ID")
         self.signing_client_secret = env.get("FLIGHT_PASSPORT_SIGNING_CLIENT_SECRET")
+        self.jose_signing_algorithm = "RS256"
 
     def generate_content_digest(self, payload):
         payload_str = json.dumps(payload)
@@ -112,7 +116,6 @@ class ResponseSigningOperations:
         For a payload sign using the OIDC private key and return signed JWS
         """
 
-        algorithms = "RS256"
         private_key = env.get("SECRET_KEY", None)
         if private_key:
             try:
@@ -126,8 +129,10 @@ class ResponseSigningOperations:
 
             jws_token.add_signature(
                 key=key,
-                alg=algorithms,
-                protected=json_encode({"alg": "RS256", "kid": key.thumbprint()}),
+                alg=self.jose_signing_algorithm,
+                protected=json_encode(
+                    {"alg": self.jose_signing_algorithm, "kid": key.thumbprint()}
+                ),
             )
 
             sig = jws_token.serialize()
