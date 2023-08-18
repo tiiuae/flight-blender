@@ -17,7 +17,7 @@ from rest_framework.parsers import JSONParser
 from shapely.geometry import shape
 
 from auth_helper.utils import requires_scopes
-from flight_feed_operations import pki_helper
+from security import signing
 from geo_fence_operations import rtree_geo_fence_helper
 from geo_fence_operations.models import GeoFence
 
@@ -299,8 +299,8 @@ def set_flight_declaration(request: HttpRequest):
 @api_view(["POST"])
 @requires_scopes(["blender.write"])
 def set_signed_flight_declaration(request: HttpRequest):
-    payload_verifier = pki_helper.MessageVerifier()
-    response_signer = pki_helper.ResponseSigningOperations()
+    payload_verifier = signing.MessageVerifier()
+    response_signer = signing.ResponseSigningOperations()
 
     # Verify the payload
     payload_verified = payload_verifier.verify_message(request)
