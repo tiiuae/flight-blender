@@ -201,7 +201,7 @@ class FlightDeclarationPostTests(APITestCase):
             data=json.dumps(valid_payload),
         )
         self.assertEqual(response.json()["message"], "Submitted Flight Declaration")
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
 
 @pytest.mark.usefixtures("create_public_keys")
