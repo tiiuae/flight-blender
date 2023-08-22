@@ -302,7 +302,6 @@ def set_signed_flight_declaration(request: HttpRequest):
     payload_verifier = signing.MessageVerifier()
     response_signer = signing.ResponseSigningOperations()
 
-    # Verify the payload
     payload_verified = payload_verifier.verify_message(request)
     if not payload_verified:
         return HttpResponse(
@@ -389,6 +388,32 @@ def set_signed_flight_declaration(request: HttpRequest):
 
     return http_response
 
+
+@api_view(["POST"])
+@requires_scopes(["blender.write"])
+def test_sign(request: HttpRequest):
+    stream = io.BytesIO(request.body)
+    json_payload = JSONParser().parse(stream)
+
+    payload_verifier = signing.MessageVerifier()
+
+    payload_verified = payload_verifier.verify_message(request)
+
+    if not payload_verified:
+        return HttpResponse(
+            json.dumps(
+                {
+                    "message": "Could not verify against public keys setup in Flight Blender"
+                }
+            ),
+            status=status.HTTP_400_BAD_REQUEST,
+            content_type="application/json",
+        )
+    return HttpResponse(
+            json.dumps(json_payload),
+            status=status.HTTP_200_OK,
+            content_type="application/json",
+        )
 
 @method_decorator(requires_scopes(["blender.write"]), name="dispatch")
 class FlightDeclarationApproval(mixins.UpdateModelMixin, generics.GenericAPIView):

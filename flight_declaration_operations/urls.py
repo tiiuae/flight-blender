@@ -19,6 +19,7 @@ from django.urls import path
 from . import views as flight_declaration_views
 
 urlpatterns = [
+    path('test_sign',flight_declaration_views.test_sign, name="test_sign",),
     path(
         "set_flight_declaration",
         flight_declaration_views.set_flight_declaration,
