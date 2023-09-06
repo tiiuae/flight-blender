@@ -22,7 +22,7 @@ from .rid_telemetry_helper import BlenderTelemetryValidator, NestedDict
 from django.utils.decorators import method_decorator
 from .models import SignedTelmetryPublicKey
 from .serializers import SignedTelmetryPublicKeySerializer
-from rest_framework import generics
+from rest_framework import generics,status
 from jwcrypto import jwk, jwt
 from os import environ as env
 from dotenv import load_dotenv, find_dotenv
@@ -283,7 +283,7 @@ def set_telemetry(request):
         flight_details_current_states_exist = my_telemetry_validator.validate_flight_details_current_states_exist(flight= flight)
         if not flight_details_current_states_exist:
             incorrect_parameters = {"message": "A flights object with current states, flight details is necessary"}
-            return JsonResponse(incorrect_parameters, status=400, content_type='application/json')                  
+            return JsonResponse(incorrect_parameters, status=status.HTTP_400_BAD_REQUEST, content_type='application/json')                  
 
         current_states = flight['current_states']
         flight_details = flight['flight_details']
@@ -294,7 +294,7 @@ def set_telemetry(request):
                 
         except KeyError as ke: 
             incorrect_parameters = {"message": "A states object with a fully valid current states is necessary, the parsing the following key encountered errors %s" % ke}
-            return JsonResponse(incorrect_parameters, status=400, content_type='application/json')        
+            return JsonResponse(incorrect_parameters, status=status.HTTP_400_BAD_REQUEST, content_type='application/json')        
 
         single_observation_set = SignedUnSignedTelemetryObservations(current_states = all_states, flight_details = f_details)
 
@@ -302,7 +302,7 @@ def set_telemetry(request):
 
         stream_rid_data_v22.delay(rid_telemetry_observations= json.dumps(unsigned_telemetry_observations))
     submission_success = {"message": "Telemetry data succesfully submitted"}
-    return JsonResponse(submission_success, status=201, content_type='application/json')
+    return JsonResponse(submission_success, status=status.HTTP_201_CREATED, content_type='application/json')
 
         
         
