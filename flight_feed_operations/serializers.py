@@ -80,3 +80,19 @@ class ObservationSerializer(serializers.Serializer):
 
 class TelemetryRequestSerializer(serializers.Serializer):
     observations = ObservationSerializer(many=True)
+
+    def create(self, validated_data):
+        return TelemetryRequest(**validated_data)
+
+
+
+class TelemetryRequest:
+    """
+    Class object that will be used to contain deserialized JSON payload from the POST request.
+    """
+
+    def __init__(
+        self,
+        observations,
+    ):
+        self.observations = observations

@@ -22,7 +22,7 @@ from .pki_helper import MessageVerifier, ResponseSigningOperations
 from .rid_telemetry_helper import BlenderTelemetryValidator, NestedDict
 from django.utils.decorators import method_decorator
 from .models import SignedTelmetryPublicKey
-from .serializers import SignedTelmetryPublicKeySerializer,TelemetryRequestSerializer
+from .serializers import SignedTelmetryPublicKeySerializer,TelemetryRequestSerializer,TelemetryRequest
 from rest_framework import generics,status
 from jwcrypto import jwk, jwt
 from os import environ as env
@@ -276,8 +276,24 @@ def _parse_telemetry_request(json_payload):
         error = serializer.errors
         return telemetry_request, error
 
-    print(serializer.validated_data)
-    print("#Printed validated data")
+    telemetry_request = serializer.create(serializer.validated_data)
+    return telemetry_request,error
+
+def _get_flight_details_from_telemetry_request(request:TelemetryRequest):
+    flight_details = request.observations[0]["flight_details"]
+    return RIDFlightDetails(
+    id=flight_details["rid_details"]["id"],
+    eu_classification=flight_details["eu_classification"], 
+    uas_id=flight_details["uas_id"], 
+    operator_location=flight_details["operator_location"],
+    operator_id=flight_details["rid_details"]["operator_id"], 
+    operation_description=flight_details["rid_details"]["operation_description"],
+    auth_data=flight_details["auth_data"]
+    )
+    
+
+def _get_current_states_from_telemetry_request(request:TelemetryRequest):
+    pass
 
 
 @api_view(['PUT'])
@@ -287,13 +303,22 @@ def set_telemetry(request:HttpRequest):
     json_payload = JSONParser().parse(stream)
 
     parsed_telemetry_request,parse_error=_parse_telemetry_request(json_payload)
-
     if parse_error:
         return HttpResponse(
             json.dumps(parse_error),
             status=status.HTTP_400_BAD_REQUEST,
             content_type="application/json",
         )
+    
+    f_details = _get_flight_details_from_telemetry_request(parsed_telemetry_request)
+
+    all_states: List[RIDAircraftState] = []
+
+    single_observation_set = SignedUnSignedTelemetryObservations(current_states = all_states, flight_details = f_details)
+
+    unsigned_telemetry_observations: List[SignedUnSignedTelemetryObservations] = []
+    unsigned_telemetry_observations.append(asdict(single_observation_set, dict_factory=NestedDict))
+    print(unsigned_telemetry_observations)
     return JsonResponse({}, status=status.HTTP_202_ACCEPTED, content_type='application/json')
 
 @api_view(['PUT'])
