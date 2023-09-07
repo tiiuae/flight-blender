@@ -1,4 +1,5 @@
 # Create your views here.
+import io
 import json
 import logging
 from django.http import JsonResponse
@@ -21,11 +22,14 @@ from .pki_helper import MessageVerifier, ResponseSigningOperations
 from .rid_telemetry_helper import BlenderTelemetryValidator, NestedDict
 from django.utils.decorators import method_decorator
 from .models import SignedTelmetryPublicKey
-from .serializers import SignedTelmetryPublicKeySerializer
+from .serializers import SignedTelmetryPublicKeySerializer,TelemetryRequestSerializer
 from rest_framework import generics,status
 from jwcrypto import jwk, jwt
 from os import environ as env
+from django.http import HttpRequest,HttpResponse
 from dotenv import load_dotenv, find_dotenv
+from rest_framework.parsers import JSONParser
+
 ENV_FILE = find_dotenv()
 if ENV_FILE:
     load_dotenv(ENV_FILE)
@@ -259,10 +263,42 @@ def set_signed_telemetry(request):
         
         return response
             
-        
+
+
+def _parse_telemetry_request(json_payload):
+    """
+    Validate the JSON payload to make sure all required fields are provided and the flight times are in proper order
+    """
+    error = None
+    telemetry_request = None
+    serializer = TelemetryRequestSerializer(data=json_payload)
+    if not serializer.is_valid():
+        error = serializer.errors
+        return telemetry_request, error
+
+    print(serializer.validated_data)
+    print("#Printed validated data")
+
+
 @api_view(['PUT'])
 @requires_scopes(['blender.write'])
-def set_telemetry(request):
+def set_telemetry(request:HttpRequest):
+    stream = io.BytesIO(request.body)
+    json_payload = JSONParser().parse(stream)
+
+    parsed_telemetry_request,parse_error=_parse_telemetry_request(json_payload)
+
+    if parse_error:
+        return HttpResponse(
+            json.dumps(parse_error),
+            status=status.HTTP_400_BAD_REQUEST,
+            content_type="application/json",
+        )
+    return JsonResponse({}, status=status.HTTP_202_ACCEPTED, content_type='application/json')
+
+@api_view(['PUT'])
+@requires_scopes(['blender.write'])
+def set_telemetry1(request):
     ''' A RIDOperatorDetails object is posted here'''
     # This endpoints receives data from GCS and / or flights and processes remote ID data. 
     # TODO: Use dacite to parse incoming json into a dataclass    
