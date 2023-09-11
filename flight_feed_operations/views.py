@@ -314,6 +314,11 @@ def _get_current_states_from_observation(observation:TelemetryRequest):
 @api_view(['PUT'])
 @requires_scopes(['blender.write'])
 def set_telemetry(request:HttpRequest):
+    ''' 
+    A RIDOperatorDetails object is posted here
+    This endpoints receives data from GCS and / or flights and processes remote ID data.
+    '''
+    # TODO: Use dacite to parse incoming json into a dataclass    
     stream = io.BytesIO(request.body)
     json_payload = JSONParser().parse(stream)
 
@@ -347,8 +352,7 @@ def set_telemetry(request:HttpRequest):
 @requires_scopes(['blender.write'])
 def set_telemetry_old(request):
     ''' A RIDOperatorDetails object is posted here'''
-    # This endpoints receives data from GCS and / or flights and processes remote ID data. 
-    # TODO: Use dacite to parse incoming json into a dataclass    
+    # This endpoints receives data from GCS and / or flights and processes remote ID data.    
     raw_data = request.data
 
     my_telemetry_validator = BlenderTelemetryValidator()

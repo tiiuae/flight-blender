@@ -180,7 +180,6 @@ class BlenderTelemetryValidator:
             return False
         return True
 
-
 def flight_detail_json_to_object(json) -> RIDFlightDetails:
     eu_classification_details = json["eu_classification"]
     eu_classification = UAClassificationEU(
@@ -217,7 +216,6 @@ def flight_detail_json_to_object(json) -> RIDFlightDetails:
     )
 
     return f_details
-
 
 def current_state_json_to_object(json) -> RIDAircraftState:
     timestamp = Time(
