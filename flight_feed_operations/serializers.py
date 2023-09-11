@@ -79,7 +79,9 @@ class ObservationSerializer(serializers.Serializer):
     flight_details = FlightDetailsSerializer()
 
 class TelemetryRequestSerializer(serializers.Serializer):
-    observations = ObservationSerializer(many=True)
+    observations = ObservationSerializer(many=True,        error_messages={
+            "required": "A flight observation array with current states and flight details is necessary"
+        })
 
     def create(self, validated_data):
         return TelemetryRequest(**validated_data)
