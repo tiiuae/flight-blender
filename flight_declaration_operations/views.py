@@ -379,9 +379,13 @@ def set_signed_flight_declaration(request: HttpRequest):
     content_digest = response_signer.generate_content_digest(creation_response)
     signed_data = response_signer.sign_json_via_django(creation_response)
     creation_response["signed"] = signed_data
+    
+    response_json = json.dumps(creation_response)
+    
     http_response = HttpResponse(
-        creation_response, status=status.HTTP_200_OK, content_type="application/json"
+        response_json, status=status.HTTP_200_OK, content_type="application/json"
     )
+  
     http_response["Content-Digest"] = content_digest
     http_response["req"] = request.headers["Signature"]
 
