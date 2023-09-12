@@ -299,9 +299,10 @@ def set_flight_declaration(request: HttpRequest):
 @api_view(["POST"])
 @requires_scopes(["blender.write"])
 def set_signed_flight_declaration(request: HttpRequest):
-    payload_verifier = signing.MessageVerifier()
-    response_signer = signing.ResponseSigningOperations()
+    stream = io.BytesIO(request.body)
+    json_payload = JSONParser().parse(stream)
 
+    payload_verifier = signing.MessageVerifier()
     payload_verified = payload_verifier.verify_message(request)
     if not payload_verified:
         return HttpResponse(
@@ -323,9 +324,6 @@ def set_signed_flight_declaration(request: HttpRequest):
             status=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
             content_type="application/json",
         )
-
-    stream = io.BytesIO(request.body)
-    json_payload = JSONParser().parse(stream)
 
     # Validate the JSON payload
     parsed_fd_request, parse_error = _parse_flight_declaration_request(json_payload)
@@ -376,6 +374,7 @@ def set_signed_flight_declaration(request: HttpRequest):
     )
 
     # Sign the response
+    response_signer = signing.ResponseSigningOperations()
     creation_response = asdict(creation_response)
     content_digest = response_signer.generate_content_digest(creation_response)
     signed_data = response_signer.sign_json_via_django(creation_response)
@@ -410,10 +409,11 @@ def test_sign(request: HttpRequest):
             content_type="application/json",
         )
     return HttpResponse(
-            json.dumps(json_payload),
-            status=status.HTTP_200_OK,
-            content_type="application/json",
-        )
+        json.dumps(json_payload),
+        status=status.HTTP_200_OK,
+        content_type="application/json",
+    )
+
 
 @method_decorator(requires_scopes(["blender.write"]), name="dispatch")
 class FlightDeclarationApproval(mixins.UpdateModelMixin, generics.GenericAPIView):
