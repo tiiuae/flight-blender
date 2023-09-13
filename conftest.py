@@ -8,24 +8,18 @@ from rest_framework import status
 from flight_declaration_operations import models as fdo_models
 from non_repudiation import models as nr_models
 
-TOKEN_URL = env.get("PASSPORT_URL", "") + env.get("PASSPORT_TOKEN_URL", "")
-CLIENT_ID = env.get("CLIENT_ID", "")
-CLIENT_SECRET = env.get("CLIENT_SECRET", "")
-SCOPE = "blender.write blender.read"
-AUDIENCE = env.get("PASSPORT_AUDIENCE", "")
-
 
 def get_oauth2_token():
     # Request a new OAuth2 token
     data = {
         "grant_type": "client_credentials",
-        "client_id": CLIENT_ID,
-        "client_secret": CLIENT_SECRET,
-        "scope": SCOPE,
-        "audience": AUDIENCE,
+        "client_id": env.get("CLIENT_ID", ""),
+        "client_secret": env.get("CLIENT_SECRET", ""),
+        "scope": "blender.write blender.read",
+        "audience": env.get("PASSPORT_AUDIENCE", ""),
     }
-
-    response = requests.post(TOKEN_URL, data=data)
+    token_url = env.get("PASSPORT_URL", "") + env.get("PASSPORT_TOKEN_URL", "")
+    response = requests.post(token_url, data=data)
 
     # Check for a successful response and return the token
     if response.status_code == status.HTTP_200_OK:
