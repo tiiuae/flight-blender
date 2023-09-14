@@ -12,7 +12,7 @@ from http_message_signatures import (
     algorithms,
 )
 
-import security.helper_test as helper
+import security.helper as helper
 from security.signing import MessageVerifier
 
 
