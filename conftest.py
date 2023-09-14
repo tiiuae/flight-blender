@@ -1,10 +1,48 @@
 import json
+from os import environ as env
 
 import pytest
+import requests
+from rest_framework import status
 
 from flight_declaration_operations import models as fdo_models
 from flight_feed_operations import models as ffo_models
 from non_repudiation import models as nr_models
+
+
+def get_oauth2_token():
+    # Request a new OAuth2 token
+    data = {
+        "grant_type": "client_credentials",
+        "client_id": env.get("CLIENT_ID", ""),
+        "client_secret": env.get("CLIENT_SECRET", ""),
+        "scope": "blender.write blender.read",
+        "audience": env.get("PASSPORT_AUDIENCE", ""),
+    }
+    token_url = env.get("PASSPORT_URL", "") + env.get("PASSPORT_TOKEN_URL", "")
+    response = requests.post(token_url, data=data)
+
+    # Check for a successful response and return the token
+    if response.status_code == status.HTTP_200_OK:
+        token_data = response.json()
+        return token_data.get("access_token")
+    else:
+        raise ValueError(
+            f"Failed to obtain OAuth2 token. Status code: {response.status_code}"
+        )
+
+
+@pytest.fixture(scope="function")
+def mock_env_passport_url():
+    # Set the environment variable PASSPORT_URL to the mocked value
+    original_passport_url = env.get("PASSPORT_URL", "")
+    env["PASSPORT_URL"] = "https://invalid_passporturl.com"
+
+    # Yield control back to the test
+    yield
+
+    # Restore the environment variable: PASSPORT_URL to its original value
+    env["PASSPORT_URL"] = original_passport_url
 
 
 @pytest.mark.django_db
