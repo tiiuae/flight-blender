@@ -6,10 +6,8 @@ import json
 
 import pytest
 from django.urls import reverse
-import requests
 from rest_framework import status
 from rest_framework.test import APITestCase
-import requests_mock
 
 from conftest import get_oauth2_token
 

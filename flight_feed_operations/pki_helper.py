@@ -49,17 +49,7 @@ class MessageVerifier:
                 key = json.loads(k)
             else:
                 response = s.get(current_public_key.url)
-                jwks_data = {
-"keys": [
-{
-"alg": "RS512",
-"kty": "RSA",
-"n": "rFnQ2e27o_xLtDghN0OeWSDC9zVrJJ3-QmxmG2u6-3S8sp3Yi3zlXf819ow0Nlhvcb8aNvRa6okewtFgyb6AhoyyOwLRMp3LYa3efe1AsFrumvo5QlWo3PNruBfTlOz9ODM82Ff7vMAbIdJ0loVroHirv6UYU1LNenN8YMQfbqX3AfbeaVhcsak_0HmXmz5lofMsHptTFd3ith7v6CFOfApjbYv5tkOZ2foaoRU07Q-dWUo0ia2RmwFHBHgd6O6W65saGYS2P5dMQ0ZG19BO92_wOvLRlIFUUFaVg4sd1zkrMDtthONvVkGoL8rigzzEAo_SCbaRLE8n_urJeEWTRw",
-"e": "AAEAAQ",
-"kid": "001"
-}
-]
-}
+                jwks_data = response.json()
                 if "keys" in jwks_data:
                     jwk = next(
                         (
@@ -85,7 +75,7 @@ class MessageVerifier:
         stored_public_keys = self.get_public_keys()
         if bool(stored_public_keys):
             r = requests.Request(
-                "POST",
+                "PUT",
                 request.build_absolute_uri(),
                 json=request.data,
                 headers=request.headers,
