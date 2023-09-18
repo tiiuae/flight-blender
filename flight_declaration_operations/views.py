@@ -373,49 +373,9 @@ def set_signed_flight_declaration(request: HttpRequest):
         state=default_state,
     )
 
-    # Sign the response
-    response_signer = signing.ResponseSigningOperations()
-    creation_response = asdict(creation_response)
-    content_digest = response_signer.generate_content_digest(creation_response)
-    signed_data = response_signer.sign_json_via_django(creation_response)
-    creation_response["signed"] = signed_data
-    
-    response_json = json.dumps(creation_response)
-    
-    http_response = HttpResponse(
-        response_json, status=status.HTTP_200_OK, content_type="application/json"
-    )
-  
-    http_response["Content-Digest"] = content_digest
-    http_response["req"] = request.headers["Signature"]
-
-    return http_response
-
-
-@api_view(["POST"])
-@requires_scopes(["blender.write"])
-def test_sign(request: HttpRequest):
-    stream = io.BytesIO(request.body)
-    json_payload = JSONParser().parse(stream)
-
-    payload_verifier = signing.MessageVerifier()
-
-    payload_verified = payload_verifier.verify_message(request)
-
-    if not payload_verified:
-        return HttpResponse(
-            json.dumps(
-                {
-                    "message": "Could not verify against public keys setup in Flight Blender"
-                }
-            ),
-            status=status.HTTP_400_BAD_REQUEST,
-            content_type="application/json",
-        )
+    op = json.dumps(asdict(creation_response))
     return HttpResponse(
-        json.dumps(json_payload),
-        status=status.HTTP_200_OK,
-        content_type="application/json",
+        op, status=status.HTTP_201_CREATED, content_type="application/json"
     )
 
 
