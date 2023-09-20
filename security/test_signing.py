@@ -137,6 +137,7 @@ class ResponseSigningTests(TestCase):
         verified_payload_json = json.loads(verified_payload_str)
         assert verified_payload_json == self.response_json
 
+    @pytest.mark.usefixtures("mock_env_secret_key")
     def test_sign_http_message_via_ietf(self):
         response_payload = {
             "id": "0e036233-903b-49ab-8664-a35df14d7afa",
