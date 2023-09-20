@@ -26,7 +26,7 @@ cleanimports:
 
 # Run tests
 testprep:
-	$(DOCKER_COMPOSE_CMD) exec -it flight-blender-web-1 python -m pip install --upgrade -r requirements_dev.txt
+	docker exec -it flight-blender-web-1 python -m pip install --upgrade -r requirements_dev.txt
 
 test: testprep
-	$(DOCKER_COMPOSE_CMD) exec -it flight-blender-web-1 pytest
+	docker exec -it flight-blender-web-1 pytest
