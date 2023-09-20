@@ -7,6 +7,7 @@ import http_sfv
 import jwt
 import requests
 from cryptography.hazmat.primitives.serialization import load_pem_private_key
+from cryptography.hazmat.backends import default_backend
 from django.core.signing import Signer
 from django.http import HttpRequest, HttpResponse
 from dotenv import find_dotenv, load_dotenv
@@ -33,14 +34,18 @@ class BlenderHTTPSignatureKeyResolver(HTTPSignatureKeyResolver):
     def __init__(self, jwk):
         self.jwk = jwk
 
-    def resolve_public_key(self,key_id: str):
+    def resolve_public_key(self, key_id: str):
         public_key = jwt.algorithms.RSAAlgorithm.from_jwk(self.jwk)
         return public_key
 
-    #TODO: Read private key from env SECRET_KEY
     def resolve_private_key(self, key_id: str):
-        with open(f"security/test_keys/{key_id}.key", "rb") as fh:
-            return load_pem_private_key(fh.read(), password=None)
+        private_key_pem = env.get("SECRET_KEY", "")
+        private_key = load_pem_private_key(
+            private_key_pem.encode("utf-8"),
+            password=None,
+            backend=default_backend(),
+        )
+        return private_key
 
 
 class MessageVerifier:
@@ -154,7 +159,9 @@ class ResponseSigner:
         else:
             return {}
 
-    def sign_http_message_via_ietf(self, json_payload, original_request: HttpRequest)->HttpResponse:
+    def sign_http_message_via_ietf(
+        self, json_payload, original_request: HttpRequest
+    ) -> HttpResponse:
         response = HttpResponse()
         response.url = original_request.build_absolute_uri()
         response.request = original_request
@@ -168,7 +175,7 @@ class ResponseSigner:
         )
         signer.sign(
             response,
-            key_id="001",#TODO: Remove hardcoded key_id once e2e test is done
+            key_id="001",  # TODO: Remove hardcoded key_id once e2e test is done
             covered_component_ids=(
                 "@method",
                 "@authority",

@@ -1,4 +1,3 @@
-from collections import namedtuple
 import hashlib
 import json
 from unittest.mock import patch
@@ -6,13 +5,17 @@ from unittest.mock import patch
 import http_sfv
 import pytest
 import requests
-from cryptography.hazmat.primitives.serialization import load_pem_private_key,load_pem_public_key
+from cryptography.hazmat.primitives.serialization import (
+    load_pem_private_key,
+    load_pem_public_key,
+)
 from django.test import TestCase
 from http_message_signatures import (
     HTTPMessageSigner,
-    HTTPSignatureKeyResolver,HTTPMessageVerifier,
+    HTTPSignatureKeyResolver,
+    HTTPMessageVerifier,
     algorithms,
-    structures
+    structures,
 )
 from jwcrypto import jwk, jws
 
@@ -28,6 +31,7 @@ class _TestHTTPSignatureKeyResolver(HTTPSignatureKeyResolver):
     def resolve_public_key(self, key_id: str):
         with open(f"security/test_keys/{key_id}.pem", "rb") as fh:
             return load_pem_public_key(fh.read())
+
 
 class MessageVerifierTests(TestCase):
     def setUp(self):
@@ -133,7 +137,6 @@ class ResponseSigningTests(TestCase):
         verified_payload_json = json.loads(verified_payload_str)
         assert verified_payload_json == self.response_json
 
-
     def test_sign_http_message_via_ietf(self):
         response_payload = {
             "id": "0e036233-903b-49ab-8664-a35df14d7afa",
@@ -148,9 +151,8 @@ class ResponseSigningTests(TestCase):
             json_payload=response_payload, original_request=original_request
         )
         verifier = HTTPMessageVerifier(
-            signature_algorithm=algorithms.RSA_PSS_SHA512, key_resolver=_TestHTTPSignatureKeyResolver()
+            signature_algorithm=algorithms.RSA_PSS_SHA512,
+            key_resolver=_TestHTTPSignatureKeyResolver(),
         )
         output = verifier.verify(signed_response)
-        assert isinstance(output[0],structures.VerifyResult)
-        
-
+        assert isinstance(output[0], structures.VerifyResult)
