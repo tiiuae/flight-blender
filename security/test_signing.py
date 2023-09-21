@@ -127,7 +127,7 @@ class ResponseSigningTests(TestCase):
             public_key_pem = public_key_file.read()
 
         public_key = jwk.JWK.from_pem(public_key_pem)
-        # Verify the response json signed with JOSE by using hte Public key
+        # Verify the response json signed with JOSE by using the Public key
         token = signed_response["signature"]
         jws_token = jws.JWS()
         jws_token.deserialize(token)
