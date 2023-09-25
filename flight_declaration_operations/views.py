@@ -17,9 +17,9 @@ from rest_framework.parsers import JSONParser
 from shapely.geometry import shape
 
 from auth_helper.utils import requires_scopes
-from security import signing
 from geo_fence_operations import rtree_geo_fence_helper
 from geo_fence_operations.models import GeoFence
+from security import signing
 
 from .data_definitions import FlightDeclarationCreateResponse
 from .flight_declarations_rtree_helper import FlightDeclarationRTreeIndexFactory
@@ -374,9 +374,14 @@ def set_signed_flight_declaration(request: HttpRequest):
     )
 
     op = json.dumps(asdict(creation_response))
-    return HttpResponse(
-        op, status=status.HTTP_201_CREATED, content_type="application/json"
+
+    signer = signing.ResponseSigner()
+    signed_response = signer.sign_http_message_via_ietf(
+        json_payload=op, original_request=request
     )
+    signed_response.content = op
+    signed_response.status_code = status.HTTP_201_CREATED
+    return signed_response
 
 
 @method_decorator(requires_scopes(["blender.write"]), name="dispatch")
