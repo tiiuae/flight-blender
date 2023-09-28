@@ -1,11 +1,7 @@
-import json
 import logging
-import os
-from os import environ as env
 
 import arrow
 from common.database_operations import BlenderDatabaseReader
-from django.core import management
 from dotenv import find_dotenv, load_dotenv
 
 from flight_blender.celery import app

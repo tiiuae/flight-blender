@@ -1,6 +1,5 @@
 import json
 import logging
-from os import environ as env
 
 import arrow
 from common.database_operations import BlenderDatabaseReader

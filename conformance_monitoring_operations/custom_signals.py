@@ -2,7 +2,6 @@ import logging
 
 import django.dispatch
 from common.database_operations import BlenderDatabaseReader
-from django.core import management
 from django.dispatch import receiver
 
 from .conformance_checks_handler import FlightOperationConformanceHelper

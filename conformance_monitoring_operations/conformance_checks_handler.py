@@ -6,8 +6,7 @@ from common.database_operations import BlenderDatabaseReader, BlenderDatabaseWri
 from django.core import management
 from dotenv import find_dotenv, load_dotenv
 
-from .models import TaskScheduler
-from .operation_state_helper import FlightOperationStateMachine, get_status, match_state
+from .operation_state_helper import FlightOperationStateMachine, get_status
 
 load_dotenv(find_dotenv())
 
