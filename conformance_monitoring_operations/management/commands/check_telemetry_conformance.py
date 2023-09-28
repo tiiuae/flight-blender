@@ -1,6 +1,6 @@
-from django.core.management.base import BaseCommand, CommandError
-from common.database_operations import BlenderDatabaseReader
 import arrow
+from common.database_operations import BlenderDatabaseReader
+from django.core.management.base import BaseCommand, CommandError
 
 
 class Command(BaseCommand):

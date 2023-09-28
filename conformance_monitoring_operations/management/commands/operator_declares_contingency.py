@@ -1,27 +1,29 @@
-from django.core.management.base import BaseCommand, CommandError
-from os import environ as env
-from common.database_operations import BlenderDatabaseReader
-from common.data_definitions import OPERATION_STATES
-import arrow
-from dotenv import load_dotenv, find_dotenv
-import logging
-from typing import List
-from shapely.geometry import Point
-from auth_helper.common import get_redis
 import json
-from scd_operations.dss_scd_helper import SCDOperations
-from scd_operations.scd_data_definitions import (
-    Time,
-    OperationalIntentReferenceDSSResponse,
-    ImplicitSubscriptionParameters,
-    LatLngPoint,
-    Polygon,
-    Volume4D,
-)
-from flight_feed_operations import flight_stream_helper
+import logging
+from os import environ as env
+from typing import List
+
+import arrow
+from common.data_definitions import OPERATION_STATES
+from common.database_operations import BlenderDatabaseReader
 from dacite import from_dict
+from django.core.management.base import BaseCommand, CommandError
+from dotenv import find_dotenv, load_dotenv
+from shapely.geometry import Point
+
+from auth_helper.common import get_redis
 from conformance_monitoring_operations.data_definitions import PolygonAltitude
 from flight_declaration_operations.utils import OperationalIntentsConverter
+from flight_feed_operations import flight_stream_helper
+from scd_operations.dss_scd_helper import SCDOperations
+from scd_operations.scd_data_definitions import (
+    ImplicitSubscriptionParameters,
+    LatLngPoint,
+    OperationalIntentReferenceDSSResponse,
+    Polygon,
+    Time,
+    Volume4D,
+)
 
 load_dotenv(find_dotenv())
 

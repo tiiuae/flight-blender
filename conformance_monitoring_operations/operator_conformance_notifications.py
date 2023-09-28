@@ -1,7 +1,9 @@
-from flight_declaration_operations.tasks import send_operational_update_message
-from dotenv import load_dotenv, find_dotenv
-from os import environ as env
 import logging
+from os import environ as env
+
+from dotenv import find_dotenv, load_dotenv
+
+from flight_declaration_operations.tasks import send_operational_update_message
 
 load_dotenv(find_dotenv())
 

@@ -1,14 +1,14 @@
-from django.core.management.base import BaseCommand, CommandError
+import json
+import logging
 from os import environ as env
-from common.database_operations import BlenderDatabaseReader
+
 import arrow
 from common.database_operations import BlenderDatabaseReader
-from dotenv import load_dotenv, find_dotenv
-import logging
+from django.core.management.base import BaseCommand, CommandError
+from dotenv import find_dotenv, load_dotenv
+
 from auth_helper.common import get_redis
-import logging
 from scd_operations.dss_scd_helper import SCDOperations
-import json
 
 load_dotenv(find_dotenv())
 

@@ -1,11 +1,11 @@
 from scd_operations.scd_data_definitions import (
+    Altitude,
+    Circle,
     LatLngPoint,
     Polygon,
     Radius,
-    Circle,
-    Altitude,
-    Volume3D,
     Time,
+    Volume3D,
     Volume4D,
 )
 

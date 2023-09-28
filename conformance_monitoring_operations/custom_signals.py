@@ -1,11 +1,13 @@
-from django.dispatch import receiver
-import django.dispatch
-from django.core import management
-from .operator_conformance_notifications import OperationConformanceNotification
 import logging
-from .conformance_state_helper import ConformanceChecksList
+
+import django.dispatch
 from common.database_operations import BlenderDatabaseReader
+from django.core import management
+from django.dispatch import receiver
+
 from .conformance_checks_handler import FlightOperationConformanceHelper
+from .conformance_state_helper import ConformanceChecksList
+from .operator_conformance_notifications import OperationConformanceNotification
 
 logger = logging.getLogger("django")
 # Declare signals

@@ -1,15 +1,19 @@
-import os, json
+import json
 import logging
-from .utils import BlenderConformanceEngine
-from flight_blender.celery import app
+import os
 from os import environ as env
-from common.database_operations import BlenderDatabaseReader
+
 import arrow
-from . import custom_signals
-from scd_operations.scd_data_definitions import LatLngPoint
+from common.database_operations import BlenderDatabaseReader
 from django.core import management
+from dotenv import find_dotenv, load_dotenv
+
+from flight_blender.celery import app
 from flight_feed_operations import flight_stream_helper
-from dotenv import load_dotenv, find_dotenv
+from scd_operations.scd_data_definitions import LatLngPoint
+
+from . import custom_signals
+from .utils import BlenderConformanceEngine
 
 load_dotenv(find_dotenv())
 
