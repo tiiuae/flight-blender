@@ -15,7 +15,7 @@ from scd_operations.scd_data_definitions import LatLngPoint, Polygon, Volume4D
 from .conformance_state_helper import ConformanceChecksList
 from .data_helper import cast_to_volume4d
 
-logger = logging.getLogger("django")
+
 load_dotenv(find_dotenv())
 
 
@@ -40,7 +40,7 @@ class BlenderConformanceEngine:
         """This method performs the conformance sequence per AMC1 Article 13(1) as specified in the EU AMC / GM on U-Space regulation.
         This method is called every time a telemetry has been sent into Flight Blender. Specifically, it checks this once a telemetry has been sent:
          - C2 Check if flight authorization is granted
-         - C3 Match telmetry from aircraft with the flight authorization
+         - C3 Match telemetry from aircraft with the flight authorization
          - C4 Determine whether the aircraft is subject to an accepted and activated flight authorization
          - C5 Check if flight operation is activated
          - C6 Check if telemetry is within start / end time of the operation
@@ -54,18 +54,6 @@ class BlenderConformanceEngine:
         flight_declaration = my_database_reader.get_flight_declaration_by_id(
             flight_declaration_id=flight_declaration_id
         )
-        flight_authorization = (
-            my_database_reader.get_flight_authorization_by_flight_declaration(
-                flight_declaration_id=flight_declaration_id
-            )
-        )
-        # # C2 Check
-        # try:
-        #     assert flight_authorization is not None
-        #     assert flight_declaration is not None
-        # except AssertionError as ae:
-        #     logger.error("Error in getting flight authorization and declaration for {flight_declaration_id}, cannot continue with conformance checks, C2 Check failed.".format(flight_declaration_id = flight_declaration_id))
-        #     return ConformanceChecksList.C2
 
         # Flight Operation and Flight Authorization exists, create a notifications helper
 
@@ -75,13 +63,13 @@ class BlenderConformanceEngine:
         # C3 check
         try:
             assert flight_declaration.aircraft_id == aircraft_id
-        except AssertionError as ae:
+        except AssertionError:
             return ConformanceChecksList.C3
 
         # C4, C5 check
         try:
             assert flight_declaration.state in [1, 2]
-        except AssertionError as ae:
+        except AssertionError:
             return ConformanceChecksList.C5
 
         # C6 check
@@ -91,14 +79,14 @@ class BlenderConformanceEngine:
                 end_time=operation_end_time,
                 check_time=now,
             )
-        except AssertionError as ae:
+        except AssertionError:
             return ConformanceChecksList.C6
 
         # C7 check : Check if the aircraft is within the 4D volume
 
         # Construct the boundary of the current operation by getting the operational intent
 
-        # TODO: Cache this so that it need not be done everytime
+        # TODO: Cache this so that it need not be done every time
         operational_intent = json.loads(flight_declaration.operational_intent)
         all_volumes = operational_intent["volumes"]
         # The provided telemetry location cast as a Shapely Point
@@ -141,11 +129,11 @@ class BlenderConformanceEngine:
 
         try:
             assert aircraft_altitude_conformant
-        except AssertionError as ae:
+        except AssertionError:
             return ConformanceChecksList.C7a
         try:
             assert aircraft_bounds_conformant
-        except AssertionError as ae:
+        except AssertionError:
             return ConformanceChecksList.C7b
 
         # C8 check Check if aircraft is not breaching any active Geofences
@@ -189,7 +177,7 @@ class BlenderConformanceEngine:
             return ConformanceChecksList.C10
 
         # C9 state check
-        # Operation is supposed to start check if telemetry is bieng submitted (within the last minute)
+        # Operation is supposed to start check if telemetry is being submitted (within the last minute)
         if latest_telemetry_datetime:
             if (
                 not fifteen_seconds_before_now

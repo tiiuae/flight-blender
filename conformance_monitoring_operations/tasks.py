@@ -1,7 +1,4 @@
 import logging
-
-import arrow
-from common.database_operations import BlenderDatabaseReader
 from dotenv import find_dotenv, load_dotenv
 
 from flight_blender.celery import app
@@ -23,20 +20,18 @@ logger = logging.getLogger("django")
 # This method conducts flight conformance checks as a async tasks
 @app.task(name="check_flight_conformance")
 def check_flight_conformance(flight_declaration_id: str, dry_run: str = "1"):
-    # This method checks the conformance status for ongoing operations and sends notifications / via the notificaitons channel
+    # This method checks the conformance status for ongoing operations and sends notifications / via the notifications channel
 
     dry_run = True if dry_run == "1" else False
-    d_run = "1" if dry_run == True else "0"
-    my_conformance_ops = BlenderConformanceEngine()
-    my_database_reader = BlenderDatabaseReader()
-    now = arrow.now().isoformat()
+    d_run = "1" if dry_run is True else "0"
+    conformance_ops = BlenderConformanceEngine()
 
     flight_authorization_conformant = (
-        my_conformance_ops.check_flight_authorization_conformance(
+        conformance_ops.check_flight_authorization_conformance(
             flight_declaration_id=flight_declaration_id
         )
     )
-    if flight_authorization_conformant == True:
+    if flight_authorization_conformant is True:
         logger.info(
             "Operation with {flight_operation_id} is conformant...".format(
                 flight_operation_id=flight_declaration_id
@@ -67,7 +62,7 @@ def check_operation_telemetry_conformance(
 ):
     # This method checks the conformance status for ongoing operations and sends notifications / via the notificaitons channel
     dry_run = True if dry_run == "1" else False
-    my_conformance_ops = BlenderConformanceEngine()
+    conformance_ops = BlenderConformanceEngine()
     # Get Telemetry
     stream_ops = flight_stream_helper.StreamHelperOps()
     read_cg = stream_ops.get_read_cg()
@@ -89,7 +84,7 @@ def check_operation_telemetry_conformance(
                 aircraft_id = message["address"]
 
                 conformant_via_telemetry = (
-                    my_conformance_ops.is_operation_conformant_via_telemetry(
+                    conformance_ops.is_operation_conformant_via_telemetry(
                         flight_declaration_id=flight_declaration_id,
                         aircraft_id=aircraft_id,
                         telemetry_location=LatLngPoint(lat=lat_dd, lng=lon_dd),
