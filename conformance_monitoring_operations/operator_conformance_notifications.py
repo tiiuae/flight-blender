@@ -10,21 +10,15 @@ logger = logging.getLogger("django")
 
 class OperationConformanceNotification:
     def __init__(self, flight_declaration_id: str):
-        self.amqp_connection_url = env.get("AMQP_URL", 0)
         self.flight_declaration_id = flight_declaration_id
 
-    def send_conformance_status_notification(self, message: str, level: str):
-        if self.amqp_connection_url:
-            send_operational_update_message.delay(
-                flight_declaration_id=self.flight_declaration_id,
-                message_text=message,
-                level=level,
-            )
-        else:
-            # If no AMQP is specified then
-            logger.error(
-                "Conformance Notification for {operation_id}".format(
-                    operation_id=self.flight_declaration_id
-                )
-            )
-            logger.error(message)
+    #TODO No need to have this function as it only calls send_operational_update_message()
+    # Just implement the send_operational_update_message() logic here in Non conformance context. 
+    # No need to import send_operational_update_message() from flight_declaration_operations
+    def send_conformance_status_notification(self, message: str, level: str):    
+        send_operational_update_message.delay(
+            flight_declaration_id=self.flight_declaration_id,
+            message_text=message,
+            level=level,
+        )
+
