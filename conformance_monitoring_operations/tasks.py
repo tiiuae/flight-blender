@@ -1,14 +1,18 @@
 import logging
 from dotenv import find_dotenv, load_dotenv
-
+from os import environ as env
+import arrow
 from flight_blender.celery import app
 from flight_feed_operations import flight_stream_helper
 from scd_operations.scd_data_definitions import LatLngPoint
-
+from notification_operations.notification_helper import NotificationFactory
+from notification_operations.data_definitions import \
+    NotificationMessage,NotificationLevel
 from . import custom_signals
 from .utils import BlenderConformanceEngine
 
 load_dotenv(find_dotenv())
+
 
 ENV_FILE = find_dotenv()
 if ENV_FILE:
@@ -106,3 +110,32 @@ def check_operation_telemetry_conformance(
                         flight_declaration_id=flight_declaration_id,
                     )
                 break
+
+
+@app.task(name="send_operational_update_message")
+def send_operational_update_message(
+    flight_declaration_id: str,
+    message_text: str,
+    level: str = NotificationLevel.INFO,
+    timestamp: str = None,
+):
+    amqp_connection_url = env.get("AMQP_URL", 0)
+    if not amqp_connection_url:
+        logger.info("No AMQP URL specified")
+        return
+
+    if not timestamp:
+        now = arrow.now()
+        timestamp = now.isoformat()
+
+    update_message = NotificationMessage(
+        body=message_text, level=level, timestamp=timestamp
+    )
+
+    my_notification_helper = NotificationFactory(
+        flight_declaration_id=flight_declaration_id,
+        amqp_connection_url=amqp_connection_url,
+    )
+    my_notification_helper.declare_queue(queue_name=flight_declaration_id)
+    my_notification_helper.send_message(message_details=update_message)
+    logger.info("Submitted Conformance Monitoring Notification")
