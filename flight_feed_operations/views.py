@@ -302,7 +302,7 @@ def set_signed_telemetry(request):
         return JsonResponse(
             json.dumps(
                 {
-                    "message": "Could not verify against public keys setup in Flight Blender"
+                    "message": "Could not verify against public keys of USSP client(GCS) setup in Flight Blender"
                 }
             ),
             status=400,
