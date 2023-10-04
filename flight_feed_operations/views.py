@@ -38,7 +38,6 @@ from rest_framework.parsers import JSONParser
 
 from encoders import DateTimeEncoder
 
-from .data_definitions import MessageVerificationFailedResponse
 from .models import SignedTelmetryPublicKey
 from security.signing import MessageVerifier, ResponseSigner
 from .rid_telemetry_helper import (
@@ -300,11 +299,12 @@ def set_signed_telemetry(request):
     verified = message_verifier.verify_message(request)
 
     if not verified:
-        message_verification_failed_response = MessageVerificationFailedResponse(
-            message="Could not verify against public keys setup in Flight Blender"
-        )
         return JsonResponse(
-            asdict(message_verification_failed_response),
+            json.dumps(
+                {
+                    "message": "Could not verify against public keys setup in Flight Blender"
+                }
+            ),
             status=400,
             content_type="application/json",
         )
