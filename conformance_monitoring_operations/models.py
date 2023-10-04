@@ -4,7 +4,6 @@ from datetime import datetime
 from django.db import models
 
 # Source: https://stackoverflow.com/questions/10194975/how-to-dynamically-add-remove-periodic-tasks-to-celery-celerybeat
-# Create your models here.
 from django_celery_beat.models import IntervalSchedule, PeriodicTask
 
 from flight_declaration_operations.models import FlightDeclaration
