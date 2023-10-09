@@ -29,10 +29,10 @@ from .serializers import (FlightDeclarationApprovalSerializer,
                           FlightDeclarationRequestSerializer,
                           FlightDeclarationSerializer,
                           FlightDeclarationStateSerializer)
-from .tasks import (send_operational_update_message,
-                    submit_flight_declaration_to_dss)
+from .tasks import submit_flight_declaration_to_dss
 from .utils import OperationalIntentsConverter
-
+from notification_operations import notification
+from notification_operations.data_definitions import NotificationLevel
 logger = logging.getLogger("django")
 
 
@@ -192,10 +192,11 @@ def _get_operational_intent(fd_request):
 def _send_fd_creation_notifications(
     flight_declaration_id: str, all_relevant_fences, all_relevant_declarations
 ) -> None:
-    send_operational_update_message.delay(
+    notification.send_operational_update_message.delay(
         flight_declaration_id=flight_declaration_id,
         message_text="Flight Declaration created..",
-        level="info",
+        level=NotificationLevel.INFO,
+        log_message="Submitted Flight Declaration Notification"
     )
 
     if all_relevant_fences and all_relevant_declarations:
@@ -204,12 +205,13 @@ def _send_fd_creation_notifications(
             "Self deconfliction failed, this declaration cannot be sent to the DSS system.."
         )
 
-        send_operational_update_message.delay(
+        notification.send_operational_update_message.delay(
             flight_declaration_id=flight_declaration_id,
             message_text="Self deconfliction failed for operation {operation_id} did not pass self-deconfliction, there are existing operations declared".format(
                 operation_id=flight_declaration_id
             ),
-            level="error",
+            level=NotificationLevel.ERROR,
+            log_message="Submitted Flight Declaration Notification"
         )
 
     else:
