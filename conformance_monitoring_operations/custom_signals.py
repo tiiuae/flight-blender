@@ -37,6 +37,7 @@ def process_telemetry_conformance_message(sender, **kwargs):
             flight_declaration_id=flight_declaration_id,
             message_text=invalid_aircraft_id_msg,
             level=NotificationLevel.ERROR,
+            log_message="Non conformance message in Telemetry",
         )
 
         new_state = 4
@@ -51,6 +52,7 @@ def process_telemetry_conformance_message(sender, **kwargs):
             flight_declaration_id=flight_declaration_id,
             message_text=flight_state_not_correct_msg,
             level=NotificationLevel.ERROR,
+            log_message="Non conformance message in Telemetry",
         )
         event = "blender_confirms_contingent"
         new_state = 3
@@ -64,6 +66,7 @@ def process_telemetry_conformance_message(sender, **kwargs):
             flight_declaration_id=flight_declaration_id,
             message_text=telemetry_timestamp_not_within_op_start_end_msg,
             level=NotificationLevel.ERROR,
+            log_message="Non conformance message in Telemetry",
         )
         new_state = 3
         event = "ua_departs_early_late"
@@ -77,6 +80,7 @@ def process_telemetry_conformance_message(sender, **kwargs):
             flight_declaration_id=flight_declaration_id,
             message_text=aircraft_altitude_nonconformant_msg,
             level=NotificationLevel.ERROR,
+            log_message="Non conformance message in Telemetry",
         )
         new_state = 3
         event = "ua_exits_coordinated_op_intent"
@@ -90,6 +94,7 @@ def process_telemetry_conformance_message(sender, **kwargs):
             flight_declaration_id=flight_declaration_id,
             message_text=aircraft_bounds_nonconformant_msg,
             level=NotificationLevel.ERROR,
+            log_message="Non conformance message in Telemetry",
         )
         new_state = 3
         event = "ua_exits_coordinated_op_intent"
@@ -134,6 +139,7 @@ def process_flight_authorization_non_conformance_message(sender, **kwargs):
             flight_declaration_id=flight_declaration_id,
             message_text=telemetry_not_being_received_error_msg,
             level=NotificationLevel.ERROR,
+            log_message="Non conformance message in Flight Authorization",
         )
         event = "timeout"
         new_state = 4
@@ -147,6 +153,7 @@ def process_flight_authorization_non_conformance_message(sender, **kwargs):
             flight_declaration_id=flight_declaration_id,
             message_text=telemetry_never_received_error_msg,
             level=NotificationLevel.ERROR,
+            log_message="Non conformance message in Flight Authorization",
         )
 
         event = "blender_confirms_contingent"
@@ -161,6 +168,7 @@ def process_flight_authorization_non_conformance_message(sender, **kwargs):
             flight_declaration_id=flight_declaration_id,
             message_text=flight_state_not_conformant,
             level=NotificationLevel.ERROR,
+            log_message="Non conformance message in Flight Authorization",
         )
         event = "blender_confirms_contingent"
         new_state = 4
@@ -175,6 +183,7 @@ def process_flight_authorization_non_conformance_message(sender, **kwargs):
             flight_declaration_id=flight_declaration_id,
             message_text=authorization_not_granted_message,
             level=NotificationLevel.ERROR,
+            log_message="Non conformance message in Flight Authorization",
         )
         event = "blender_confirms_contingent"
     # The operation is non-conforming, need to update the operational intent in the dss and notify peer USSP
