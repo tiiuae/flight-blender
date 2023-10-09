@@ -17,7 +17,7 @@ load_dotenv(find_dotenv())
 def send_operational_update_message(
     flight_declaration_id: str,
     message_text: str,
-    level: str = NotificationLevel.INFO,
+    level: NotificationLevel = NotificationLevel.INFO,
     timestamp: str = None,
     log_message: str = "No log message provided",
 ):
