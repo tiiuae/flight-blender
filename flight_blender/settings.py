@@ -52,7 +52,9 @@ INSTALLED_APPS = [
     'uss_operations',
     'flight_feed_operations',
     'rid_operations',
-    'non_repudiation'
+    'non_repudiation',
+    'conformance_monitoring_operations',
+    'django_celery_beat',
 ]
 
 MIDDLEWARE = [
