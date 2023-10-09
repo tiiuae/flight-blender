@@ -7,12 +7,12 @@ from rest_framework import status
 
 from flight_blender.celery import app
 from flight_declaration_operations.models import FlightDeclaration
+from notification_operations import notification
 from notification_operations.data_definitions import (
     NotificationLevel,
     NotificationMessage,
 )
 from notification_operations.notification_helper import NotificationFactory
-from notification_operations import notification
 from scd_operations.opint_helper import DSSOperationalIntentsCreator
 
 logger = logging.getLogger("django")
@@ -86,7 +86,7 @@ def submit_flight_declaration_to_dss(flight_declaration_id: str):
             flight_declaration_id=flight_declaration_id,
             message_text=validation_not_ok_msg,
             level=NotificationLevel.ERROR,
-            log_message="Submitted Flight Declaration Notification"
+            log_message="Submitted Flight Declaration Notification",
         )
         return
 
@@ -97,7 +97,7 @@ def submit_flight_declaration_to_dss(flight_declaration_id: str):
         flight_declaration_id=flight_declaration_id,
         message_text=validation_ok_msg,
         level=NotificationLevel.INFO,
-        log_message="Submitted Flight Declaration Notification"
+        log_message="Submitted Flight Declaration Notification",
     )
 
     opint_submission_result = my_dss_opint_creator.submit_flight_declaration_to_dss()
@@ -118,7 +118,7 @@ def submit_flight_declaration_to_dss(flight_declaration_id: str):
             flight_declaration_id=flight_declaration_id,
             message_text=dss_submission_error_msg,
             level=NotificationLevel.ERROR,
-            log_message="Submitted Flight Declaration Notification"
+            log_message="Submitted Flight Declaration Notification",
         )
         return
 
@@ -134,7 +134,7 @@ def submit_flight_declaration_to_dss(flight_declaration_id: str):
         flight_declaration_id=flight_declaration_id,
         message_text=submission_success_msg,
         level=NotificationLevel.INFO,
-        log_message="Submitted Flight Declaration Notification"
+        log_message="Submitted Flight Declaration Notification",
     )
 
     fo = FlightDeclaration.objects.get(id=flight_declaration_id)
@@ -148,7 +148,7 @@ def submit_flight_declaration_to_dss(flight_declaration_id: str):
         flight_declaration_id=flight_declaration_id,
         message_text=submission_state_updated_msg,
         level=NotificationLevel.INFO,
-        log_message="Submitted Flight Declaration Notification"
+        log_message="Submitted Flight Declaration Notification",
     )
     fo.save()
     logging.info(

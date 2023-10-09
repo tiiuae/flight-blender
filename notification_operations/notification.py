@@ -1,17 +1,17 @@
+import logging
+from os import environ as env
+
+import arrow
+from dotenv import find_dotenv, load_dotenv
 
 from flight_blender.celery import app
+
+from .data_definitions import NotificationLevel, NotificationMessage
 from .notification_helper import NotificationFactory
-from .data_definitions import (
-    NotificationLevel,
-    NotificationMessage,
-)
-import arrow
-from os import environ as env
-import logging
-from dotenv import find_dotenv, load_dotenv
 
 logger = logging.getLogger("django")
 load_dotenv(find_dotenv())
+
 
 @app.task(name="send_operational_update_message")
 def send_operational_update_message(
@@ -19,7 +19,7 @@ def send_operational_update_message(
     message_text: str,
     level: str = NotificationLevel.INFO,
     timestamp: str = None,
-    log_message:str ="No log message provided",
+    log_message: str = "No log message provided",
 ):
     amqp_connection_url = env.get("AMQP_URL", 0)
     if not amqp_connection_url:

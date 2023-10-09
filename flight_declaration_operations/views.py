@@ -1,5 +1,6 @@
 # Create your views here.
 import io
+
 # Create your views here.
 import json
 import logging
@@ -18,21 +19,23 @@ from shapely.geometry import shape
 from auth_helper.utils import requires_scopes
 from geo_fence_operations import rtree_geo_fence_helper
 from geo_fence_operations.models import GeoFence
+from notification_operations import notification
+from notification_operations.data_definitions import NotificationLevel
 from security import signing
 
 from .data_definitions import FlightDeclarationCreateResponse
-from .flight_declarations_rtree_helper import \
-    FlightDeclarationRTreeIndexFactory
+from .flight_declarations_rtree_helper import FlightDeclarationRTreeIndexFactory
 from .models import FlightDeclaration
 from .pagination import StandardResultsSetPagination
-from .serializers import (FlightDeclarationApprovalSerializer,
-                          FlightDeclarationRequestSerializer,
-                          FlightDeclarationSerializer,
-                          FlightDeclarationStateSerializer)
+from .serializers import (
+    FlightDeclarationApprovalSerializer,
+    FlightDeclarationRequestSerializer,
+    FlightDeclarationSerializer,
+    FlightDeclarationStateSerializer,
+)
 from .tasks import submit_flight_declaration_to_dss
 from .utils import OperationalIntentsConverter
-from notification_operations import notification
-from notification_operations.data_definitions import NotificationLevel
+
 logger = logging.getLogger("django")
 
 
@@ -196,7 +199,7 @@ def _send_fd_creation_notifications(
         flight_declaration_id=flight_declaration_id,
         message_text="Flight Declaration created..",
         level=NotificationLevel.INFO,
-        log_message="Submitted Flight Declaration Notification"
+        log_message="Submitted Flight Declaration Notification",
     )
 
     if all_relevant_fences and all_relevant_declarations:
@@ -211,7 +214,7 @@ def _send_fd_creation_notifications(
                 operation_id=flight_declaration_id
             ),
             level=NotificationLevel.ERROR,
-            log_message="Submitted Flight Declaration Notification"
+            log_message="Submitted Flight Declaration Notification",
         )
 
     else:

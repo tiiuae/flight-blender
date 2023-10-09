@@ -4,11 +4,11 @@ import django.dispatch
 from django.dispatch import receiver
 
 from common.database_operations import BlenderDatabaseReader
+from notification_operations import notification
+from notification_operations.data_definitions import NotificationLevel
 
 from .conformance_checks_handler import FlightOperationConformanceHelper
 from .conformance_state_helper import ConformanceChecksList
-from notification_operations import notification
-from notification_operations.data_definitions import NotificationLevel
 
 logger = logging.getLogger("django")
 # Declare signals
