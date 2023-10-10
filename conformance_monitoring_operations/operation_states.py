@@ -46,7 +46,6 @@ class ProcessingNotSubmittedToDss(State):
 
 class AcceptedState(State):
     def on_event(self, event: OperationEvent):
-
         match event:
             case OperationEvent.OPERATOR_ACTIVATES:
                 return ActivatedState()
@@ -60,39 +59,40 @@ class AcceptedState(State):
 
 class ActivatedState(State):
     def on_event(self, event: OperationEvent):
-
         match event:
             case OperationEvent.OPERATOR_CONFIRMS_ENDED:
-                return EndedState()   
+                return EndedState()
             case OperationEvent.UA_EXITS_COORDINATED_OP_INTENT:
-                return NonconformingState() 
+                return NonconformingState()
             case OperationEvent.OPERATOR_INITIATES_CONTINGENT:
-                return ContingentState() 
+                return ContingentState()
             case _:
                 return self
 
 
 class EndedState(State):
-    def on_event(self,event:OperationEvent):
+    def on_event(self, event: OperationEvent):
         return self
+
 
 # Use this when the state number is not within the given standard numbers. eg : -1,999
 class InvalidState(State):
-    def on_event(self,event:OperationEvent):
+    def on_event(self, event: OperationEvent):
         return self
+
 
 class NonconformingState(State):
     def on_event(self, event: OperationEvent):
-        if event == OperationEvent.OPERATOR_RETURN_TO_COORDINATED_OP_INTENT:
-            return ActivatedState()
-        elif event == OperationEvent.OPERATOR_CONFIRMS_ENDED:
-            return EndedState()
-        elif event in [
-            OperationEvent.TIMEOUT,
-            OperationEvent.OPERATOR_CONFIRMS_CONTINGENT,
-        ]:
-            return ContingentState()
-        return self
+        match event:
+            case OperationEvent.OPERATOR_RETURN_TO_COORDINATED_OP_INTENT:
+                return ActivatedState()
+            case OperationEvent.OPERATOR_CONFIRMS_ENDED:
+                return EndedState()
+            case OperationEvent.TIMEOUT | OperationEvent.OPERATOR_CONFIRMS_CONTINGENT:
+                return ContingentState()
+
+            case _:
+                return self
 
 
 class ContingentState(State):
@@ -113,34 +113,36 @@ class FlightOperationStateMachine(object):
 
 
 def _match_state(status: int):
-    if status == 0:
-        return ProcessingNotSubmittedToDss()
-    elif status == 1:
-        return AcceptedState()
-    elif status == 2:
-        return ActivatedState()
-    elif status == 3:
-        return NonconformingState()
-    elif status == 4:
-        return ContingentState()
-    elif status == 5:
-        return EndedState()
-    else:
-        return InvalidState()
+    match status:
+        case 0:
+            return ProcessingNotSubmittedToDss()
+        case 1:
+            return AcceptedState()
+        case 2:
+            return ActivatedState()
+        case 3:
+            return NonconformingState()
+        case 4:
+            return ContingentState()
+        case 5:
+            return EndedState()
+        case _:
+            return InvalidState()
 
 
-def get_status(state: State):
-    if isinstance(state, ProcessingNotSubmittedToDss):
-        return 0
-    if isinstance(state, AcceptedState):
-        return 1
-    elif isinstance(state, ActivatedState):
-        return 2
-    elif isinstance(state, NonconformingState):
-        return 3
-    elif isinstance(state, ContingentState):
-        return 4
-    elif isinstance(state, EndedState):
-        return 5
-    else:
-        return False
+def get_status(state: State) -> int:
+    match state:
+        case ProcessingNotSubmittedToDss():
+            return 0
+        case AcceptedState():
+            return 1
+        case ActivatedState():
+            return 2
+        case NonconformingState():
+            return 3
+        case ContingentState():
+            return 4
+        case EndedState():
+            return 5
+        case _:
+            return -1
