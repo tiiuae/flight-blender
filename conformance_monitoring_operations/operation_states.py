@@ -1,4 +1,4 @@
-class State(object):
+class _State(object):
     """
     A object to hold state transitions as defined in the ASTM F3548-21 standard
     Source: https://dev.to/karn/building-a-simple-state-machine-in-python
@@ -21,58 +21,58 @@ class State(object):
 
 
 # Start states
-class ProcessingNotSubmittedToDss(State):
+class _ProcessingNotSubmittedToDss(_State):
     def on_event(self, event):
         if event == "dss_accepts":
-            return AcceptedState()
+            return _AcceptedState()
         return self
 
 
 # Start states
-class AcceptedState(State):
+class _AcceptedState(_State):
     def on_event(self, event):
         if event == "operator_activates":
-            return ActivatedState()
+            return _ActivatedState()
         elif event == "operator_confirms_ended":
-            return EndedState()
+            return _EndedState()
         elif event == "ua_departs_early_late_outside_op_intent":
-            return NonconformingState()
+            return _NonconformingState()
 
         return self
 
 
-class ActivatedState(State):
+class _ActivatedState(_State):
     def on_event(self, event):
         if event == "operator_confirms_ended":
-            return EndedState()
+            return _EndedState()
         elif event == "ua_exits_coordinated_op_intent":
-            return NonconformingState()
+            return _NonconformingState()
         elif event == "operator_initiates_contingent":
-            return ContingentState()
+            return _ContingentState()
 
         return self
 
 
-class EndedState(State):
+class _EndedState(_State):
     def on_event(self, event):
         return self
 
 
-class NonconformingState(State):
+class _NonconformingState(_State):
     def on_event(self, event):
         if event == "operator_return_to_coordinated_op_intent":
-            return ActivatedState()
+            return _ActivatedState()
         elif event == "operator_confirms_ended":
-            return EndedState()
+            return _EndedState()
         elif event in ["timeout", "operator_confirms_contingent"]:
-            return ContingentState()
+            return _ContingentState()
         return self
 
 
-class ContingentState(State):
+class _ContingentState(_State):
     def on_event(self, event):
         if event == "operator_confirms_ended":
-            return EndedState()
+            return _EndedState()
 
         return self
 
@@ -91,33 +91,33 @@ class FlightOperationStateMachine(object):
 
 def match_state(status: int):
     if status == 0:
-        return ProcessingNotSubmittedToDss()
+        return _ProcessingNotSubmittedToDss()
     elif status == 1:
-        return AcceptedState()
+        return _AcceptedState()
     elif status == 2:
-        return ActivatedState()
+        return _ActivatedState()
     elif status == 3:
-        return NonconformingState()
+        return _NonconformingState()
     elif status == 4:
-        return ContingentState()
+        return _ContingentState()
     elif status == 5:
-        return EndedState()
+        return _EndedState()
     else:
         return False
 
 
-def get_status(state: State):
-    if isinstance(state, ProcessingNotSubmittedToDss):
+def get_status(state: _State):
+    if isinstance(state, _ProcessingNotSubmittedToDss):
         return 0
-    if isinstance(state, AcceptedState):
+    if isinstance(state, _AcceptedState):
         return 1
-    elif isinstance(state, ActivatedState):
+    elif isinstance(state, _ActivatedState):
         return 2
-    elif isinstance(state, NonconformingState):
+    elif isinstance(state, _NonconformingState):
         return 3
-    elif isinstance(state, ContingentState):
+    elif isinstance(state, _ContingentState):
         return 4
-    elif isinstance(state, EndedState):
+    elif isinstance(state, _EndedState):
         return 5
     else:
         return False
