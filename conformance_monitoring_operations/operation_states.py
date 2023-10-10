@@ -46,35 +46,39 @@ class ProcessingNotSubmittedToDss(State):
 
 class AcceptedState(State):
     def on_event(self, event: OperationEvent):
-        if event == OperationEvent.OPERATOR_ACTIVATES:
-            return ActivatedState()
-        elif event == OperationEvent.OPERATOR_CONFIRMS_ENDED:
-            return EndedState()
-        elif event == OperationEvent.UA_DEPARTS_EARLY_LATE_OUTSIDE_OP_INTENT:
-            return NonconformingState()
 
-        return self
+        match event:
+            case OperationEvent.OPERATOR_ACTIVATES:
+                return ActivatedState()
+            case OperationEvent.OPERATOR_CONFIRMS_ENDED:
+                return EndedState()
+            case OperationEvent.UA_DEPARTS_EARLY_LATE_OUTSIDE_OP_INTENT:
+                return NonconformingState()
+            case _:
+                return self
 
 
 class ActivatedState(State):
     def on_event(self, event: OperationEvent):
-        if event == OperationEvent.OPERATOR_CONFIRMS_ENDED:
-            return EndedState()
-        elif event == OperationEvent.UA_EXITS_COORDINATED_OP_INTENT:
-            return NonconformingState()
-        elif event == OperationEvent.OPERATOR_INITIATES_CONTINGENT:
-            return ContingentState()
 
-        return self
+        match event:
+            case OperationEvent.OPERATOR_CONFIRMS_ENDED:
+                return EndedState()   
+            case OperationEvent.UA_EXITS_COORDINATED_OP_INTENT:
+                return NonconformingState() 
+            case OperationEvent.OPERATOR_INITIATES_CONTINGENT:
+                return ContingentState() 
+            case _:
+                return self
 
 
 class EndedState(State):
-    def on_event(self):
+    def on_event(self,event:OperationEvent):
         return self
 
 # Use this when the state number is not within the given standard numbers. eg : -1,999
 class InvalidState(State):
-    def on_event(self):
+    def on_event(self,event:OperationEvent):
         return self
 
 class NonconformingState(State):
