@@ -1,3 +1,20 @@
+from enum import Enum
+
+
+class OperationEvent(Enum):
+    DSS_ACCEPTS = "dss_accepts"
+    OPERATOR_ACTIVATES = "operator_activates"
+    OPERATOR_CONFIRMS_ENDED = "operator_confirms_ended"
+    UA_DEPARTS_EARLY_LATE_OUTSIDE_OP_INTENT = "ua_departs_early_late_outside_op_intent"
+    UA_EXITS_COORDINATED_OP_INTENT = "ua_exits_coordinated_op_intent"
+    OPERATOR_INITIATES_CONTINGENT = "operator_initiates_contingent"
+    OPERATOR_RETURN_TO_COORDINATED_OP_INTENT = (
+        "operator_return_to_coordinated_op_intent"
+    )
+    OPERATOR_CONFIRMS_CONTINGENT = "operator_confirms_contingent"
+    TIMEOUT = "timeout"
+
+
 class _State(object):
     """
     A object to hold state transitions as defined in the ASTM F3548-21 standard
@@ -20,64 +37,62 @@ class _State(object):
         return self.__class__.__name__
 
 
-# Start states
 class _ProcessingNotSubmittedToDss(_State):
-    def on_event(self, event):
-        if event == "dss_accepts":
+    def on_event(self, event: OperationEvent):
+        if event == OperationEvent.DSS_ACCEPTS:
             return _AcceptedState()
         return self
 
 
-# Start states
 class _AcceptedState(_State):
-    def on_event(self, event):
-        if event == "operator_activates":
+    def on_event(self, event: OperationEvent):
+        if event == OperationEvent.OPERATOR_ACTIVATES:
             return _ActivatedState()
-        elif event == "operator_confirms_ended":
+        elif event == OperationEvent.OPERATOR_CONFIRMS_ENDED:
             return _EndedState()
-        elif event == "ua_departs_early_late_outside_op_intent":
+        elif event == OperationEvent.UA_DEPARTS_EARLY_LATE_OUTSIDE_OP_INTENT:
             return _NonconformingState()
 
         return self
 
 
 class _ActivatedState(_State):
-    def on_event(self, event):
-        if event == "operator_confirms_ended":
+    def on_event(self, event: OperationEvent):
+        if event == OperationEvent.OPERATOR_CONFIRMS_ENDED:
             return _EndedState()
-        elif event == "ua_exits_coordinated_op_intent":
+        elif event == OperationEvent.UA_EXITS_COORDINATED_OP_INTENT:
             return _NonconformingState()
-        elif event == "operator_initiates_contingent":
+        elif event == OperationEvent.OPERATOR_INITIATES_CONTINGENT:
             return _ContingentState()
 
         return self
 
 
 class _EndedState(_State):
-    def on_event(self, event):
+    def on_event(self):
         return self
 
 
 class _NonconformingState(_State):
-    def on_event(self, event):
-        if event == "operator_return_to_coordinated_op_intent":
+    def on_event(self, event: OperationEvent):
+        if event == OperationEvent.OPERATOR_RETURN_TO_COORDINATED_OP_INTENT:
             return _ActivatedState()
-        elif event == "operator_confirms_ended":
+        elif event == OperationEvent.OPERATOR_CONFIRMS_ENDED:
             return _EndedState()
-        elif event in ["timeout", "operator_confirms_contingent"]:
+        elif event in [
+            OperationEvent.TIMEOUT,
+            OperationEvent.OPERATOR_CONFIRMS_CONTINGENT,
+        ]:
             return _ContingentState()
         return self
 
 
 class _ContingentState(_State):
-    def on_event(self, event):
-        if event == "operator_confirms_ended":
+    def on_event(self, event: OperationEvent):
+        if event == OperationEvent.OPERATOR_CONFIRMS_ENDED:
             return _EndedState()
 
         return self
-
-
-# End states.
 
 
 class FlightOperationStateMachine(object):
@@ -85,7 +100,7 @@ class FlightOperationStateMachine(object):
         s = match_state(state)
         self.state = s
 
-    def on_event(self, event):
+    def on_event(self, event: OperationEvent):
         self.state = self.state.on_event(event)
 
 
