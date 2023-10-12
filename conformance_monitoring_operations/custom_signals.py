@@ -8,7 +8,7 @@ from notification_operations import notification
 from notification_operations.data_definitions import NotificationLevel
 
 from .conformance_checks_handler import FlightOperationConformanceHelper
-from .conformance_state_helper import ConformanceChecksList
+from .conformance_state_checks import ConformanceChecksList
 
 logger = logging.getLogger("django")
 # Declare signals

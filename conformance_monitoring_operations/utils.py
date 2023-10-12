@@ -12,7 +12,7 @@ from shapely.geometry import Polygon as Plgn
 from conformance_monitoring_operations.data_definitions import PolygonAltitude
 from scd_operations.scd_data_definitions import LatLngPoint, Polygon, Volume4D
 
-from .conformance_state_helper import ConformanceChecksList
+from .conformance_state_checks import ConformanceChecksList
 from .data_helper import cast_to_volume4d
 
 
