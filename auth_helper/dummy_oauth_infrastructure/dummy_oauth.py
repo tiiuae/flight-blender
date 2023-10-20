@@ -1,8 +1,7 @@
-
 import datetime
-from typing import Dict, List, Optional
 import urllib.parse
 import uuid
+from typing import Dict, List, Optional
 
 import jwcrypto.common
 import jwcrypto.jwk
@@ -65,8 +64,6 @@ class AuthAdapter(object):
                 if "sub" in payload:
                     return payload["sub"]
         return None
-
-
 
 
 class NoAuth(AuthAdapter):

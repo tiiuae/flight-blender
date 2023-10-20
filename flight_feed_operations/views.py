@@ -3,8 +3,8 @@ import io
 import json
 import logging
 from dataclasses import asdict
-
 from typing import List
+
 import shapely.geometry
 from django.http import JsonResponse
 from django.views.generic import TemplateView
@@ -37,9 +37,9 @@ from rest_framework import generics, status
 from rest_framework.parsers import JSONParser
 
 from encoders import DateTimeEncoder
+from security.signing import MessageVerifier, ResponseSigner
 
 from .models import SignedTelmetryPublicKey
-from security.signing import MessageVerifier, ResponseSigner
 from .rid_telemetry_helper import (
     BlenderTelemetryValidator,
     NestedDict,
@@ -90,10 +90,10 @@ def ping(request):
     return JsonResponse({"message": "pong"}, status=200)
 
 
-@api_view(['GET'])
-@requires_scopes(['blender.read'])
+@api_view(["GET"])
+@requires_scopes(["blender.read"])
 def ping_with_auth(request):
-    return JsonResponse({"message":"pong with auth"}, status=200)
+    return JsonResponse({"message": "pong with auth"}, status=200)
 
 
 @api_view(["POST"])

@@ -4,12 +4,24 @@ from typing import List
 from dacite import from_dict
 
 from rid_operations.data_definitions import (
-    UASID, HorizontalAccuracy, LatLngPoint, OperatorLocation,
-    RIDAircraftPosition, RIDAircraftState, RIDAuthData, RIDFlightDetails,
-    RIDHeight, RIDOperationalStatus, SignedTelemetryRequest,
-    SignedUnSignedTelemetryObservations, SpeedAccuracy,
-    SubmittedTelemetryFlightDetails, Time, UAClassificationEU,
-    VerticalAccuracy)
+    UASID,
+    HorizontalAccuracy,
+    LatLngPoint,
+    OperatorLocation,
+    RIDAircraftPosition,
+    RIDAircraftState,
+    RIDAuthData,
+    RIDFlightDetails,
+    RIDHeight,
+    RIDOperationalStatus,
+    SignedTelemetryRequest,
+    SignedUnSignedTelemetryObservations,
+    SpeedAccuracy,
+    SubmittedTelemetryFlightDetails,
+    Time,
+    UAClassificationEU,
+    VerticalAccuracy,
+)
 
 
 class NestedDict(dict):
@@ -51,7 +63,8 @@ def generate_unsigned_rid_telemetry_objects(
 
     return all_rid_data
 
-#TODO: Delete the usage of this
+
+# TODO: Delete the usage of this
 class BlenderTelemetryValidator:
     def parse_validate_current_state(self, current_state) -> RIDAircraftState:
         timestamp = Time(
@@ -180,6 +193,7 @@ class BlenderTelemetryValidator:
             return False
         return True
 
+
 def flight_detail_json_to_object(json) -> RIDFlightDetails:
     eu_classification_details = json["eu_classification"]
     eu_classification = UAClassificationEU(
@@ -216,6 +230,7 @@ def flight_detail_json_to_object(json) -> RIDFlightDetails:
     )
 
     return f_details
+
 
 def current_state_json_to_object(json) -> RIDAircraftState:
     timestamp = Time(

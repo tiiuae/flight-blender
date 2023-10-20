@@ -34,6 +34,7 @@ For more information about the DRIP protocol and the Basic ID message format, re
 
 import drip_messages as common
 
+
 class BasicIDDecoder:
     @staticmethod
     def decode_basic_id(uas_data, raw_data):
@@ -63,4 +64,3 @@ class BasicIDDecoder:
         print("UASID:", uas_data.BasicID.UASID)
 
         return common.DRIP_SUCCESS
-
