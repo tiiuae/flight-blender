@@ -1,16 +1,21 @@
+from rest_framework.test import APITestCase
+
+from django.urls import reverse
+from conftest import get_oauth2_token
 from unittest.mock import patch
-
-from django.test import Client, TestCase
-
 from .views import _fetch_weather_data
+
+JWT = get_oauth2_token()
 
 
 # Create your tests here.
-class WeatherMonitoringOperationsTestCase(TestCase):
-    def test_get_weather(self):
-        c = Client()
+class WeatherMonitoringOperationsTestCase(APITestCase):
+    def setUp(self):
+        self.client.defaults["HTTP_AUTHORIZATION"] = "Bearer " + JWT
+        self.api_url = reverse("get_weather_data")
 
-        response = c.get("/weather_monitoring_ops/weather/")
+    def test_get_weather(self):
+        response = self.client.get(self.api_url, content_type="application/json")
 
         print(response.content)
 
