@@ -42,7 +42,7 @@ class FlightDeclarationRequestSerializer(serializers.Serializer):
         required=False, default="No Flight Information"
     )
     start_datetime = serializers.DateTimeField(required=False, default=None)
-    end_datetime = serializers.DateTimeField(required=False,default=None)
+    end_datetime = serializers.DateTimeField(required=False, default=None)
     type_of_operation = serializers.IntegerField(required=False, default=0)
     vehicle_id = serializers.CharField(required=False, default="000")
     submitted_by = serializers.CharField(required=False, default=None)

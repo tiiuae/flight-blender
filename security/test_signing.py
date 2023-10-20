@@ -10,16 +10,16 @@ from cryptography.hazmat.primitives.serialization import (
     load_pem_public_key,
 )
 from django.test import TestCase
-from http_message_signatures import (
-    HTTPMessageSigner,
-    HTTPSignatureKeyResolver,
-    HTTPMessageVerifier,
-    algorithms,
-    structures,
-)
 from jwcrypto import jwk, jws
 
 import security.helper as helper
+from http_message_signatures import (
+    HTTPMessageSigner,
+    HTTPMessageVerifier,
+    HTTPSignatureKeyResolver,
+    algorithms,
+    structures,
+)
 from security.signing import MessageVerifier, ResponseSigner
 
 

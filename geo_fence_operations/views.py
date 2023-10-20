@@ -11,8 +11,6 @@ from typing import List
 
 import arrow
 import pyproj
-from auth_helper.common import get_redis
-from auth_helper.utils import requires_scopes
 from django.core.exceptions import ValidationError
 from django.core.validators import URLValidator
 from django.http import HttpRequest, HttpResponse, JsonResponse
@@ -23,6 +21,9 @@ from rest_framework.parsers import JSONParser
 from rest_framework.renderers import JSONRenderer
 from shapely.geometry import Point, shape
 from shapely.ops import unary_union
+
+from auth_helper.common import get_redis
+from auth_helper.utils import requires_scopes
 
 from . import rtree_geo_fence_helper
 from .buffer_helper import toFromUTM

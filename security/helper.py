@@ -8,6 +8,7 @@ from cryptography.hazmat.primitives.asymmetric import ec, rsa
 from django.http import HttpRequest
 from requests import Request
 
+
 def get_jwk_from_public_pem_key(path: str):
     # Load the public key in PEM format
     with open(path, "rb") as key_file:

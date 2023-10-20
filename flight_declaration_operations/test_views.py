@@ -11,12 +11,15 @@ import pytest
 import requests
 from cryptography.hazmat.primitives.serialization import load_pem_private_key
 from django.urls import reverse
-from http_message_signatures import (HTTPMessageSigner,
-                                     HTTPSignatureKeyResolver, algorithms)
 from rest_framework import status
 from rest_framework.test import APITestCase
 
 from conftest import get_oauth2_token
+from http_message_signatures import (
+    HTTPMessageSigner,
+    HTTPSignatureKeyResolver,
+    algorithms,
+)
 from security import helper
 
 JWT = get_oauth2_token()
