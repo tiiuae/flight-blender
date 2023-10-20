@@ -1,7 +1,10 @@
 from django.http import JsonResponse
-import json
+from rest_framework.decorators import api_view
+from auth_helper.utils import requires_scopes
 import requests
 
+@api_view(['GET'])
+@requires_scopes(['blender.read'])
 def get_weather_data(request):
     
     data = _fetch_weather_data()
