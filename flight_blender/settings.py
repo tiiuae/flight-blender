@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django_celery_beat',
     'rest_framework',
     'flight_declaration_operations',
     'geo_fence_operations',
@@ -52,7 +53,9 @@ INSTALLED_APPS = [
     'uss_operations',
     'flight_feed_operations',
     'rid_operations',
-    'non_repudiation'
+    'non_repudiation',
+    'conformance_monitoring_operations'
+
 ]
 
 MIDDLEWARE = [

@@ -1,5 +1,8 @@
+import pytest
 from django.test import TestCase
-
+from django.core import management
+from django.core.management.base import CommandError
+from django.core.exceptions import ValidationError
 from ..conformance_monitoring_operations import operation_states as os
 
 
@@ -122,3 +125,28 @@ class OperationStateTests(TestCase):
         os_machine1 = os.FlightOperationStateMachine(state=-1)
         os_machine1.on_event(os.OperationEvent.OPERATOR_RETURN_TO_COORDINATED_OP_INTENT)
         self.assertIsInstance(os_machine1.state, os.InvalidState)
+
+
+# TODO Not all logics are covered yet
+#Tests for management/commands/
+class MgmtCmdsOperatorDeclaresContingencyTests(TestCase):
+    def test_no_flight_declaration_id(self):
+        with pytest.raises(CommandError, match=r"Incomplete command, Flight Declaration ID not provided"):
+            management.call_command(
+                            "operator_declares_contingency",
+                            dry_run=0,
+                        )
+    def test_invalid_uuid(self):
+        with pytest.raises(ValidationError, match=r"['“001” is not a valid UUID.']"):
+            management.call_command(
+                            "operator_declares_contingency",
+                            flight_declaration_id="001",
+                            dry_run=0,
+                        )
+    def test_non_existent_uuid(self):
+        with pytest.raises(CommandError, match=r"Flight Declaration with ID 2e0f965b-c511-43c9-8a9c-8599533bee43 does not exist"):
+            management.call_command(
+                            "operator_declares_contingency",
+                            flight_declaration_id="2e0f965b-c511-43c9-8a9c-8599533bee43",
+                            dry_run=0,
+                        )
