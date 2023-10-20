@@ -17,7 +17,7 @@ class NotificationMessage:
     body: str
     level: NotificationLevel
     timestamp: str
-    
+
     def to_dict(self):
         # Convert the Enum to its string representation
         return {

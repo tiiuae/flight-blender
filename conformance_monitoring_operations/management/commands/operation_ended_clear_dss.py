@@ -2,11 +2,11 @@ import json
 import logging
 
 import arrow
-from common.database_operations import BlenderDatabaseReader
 from django.core.management.base import BaseCommand, CommandError
 from dotenv import find_dotenv, load_dotenv
 
 from auth_helper.common import get_redis
+from common.database_operations import BlenderDatabaseReader
 from scd_operations.dss_scd_helper import SCDOperations
 
 load_dotenv(find_dotenv())

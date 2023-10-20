@@ -31,7 +31,9 @@ For more information about the DRIP protocol and the Operator ID message format,
 """
 
 import ctypes
+
 import drip_messages as common
+
 
 class OperatorIDDecoder:
     @staticmethod
@@ -53,4 +55,3 @@ class OperatorIDDecoder:
         print("OperatorId:", uas_data.OperatorID.OperatorId)
 
         return common.DRIP_SUCCESS
-
