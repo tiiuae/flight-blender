@@ -48,18 +48,6 @@ class WeatherMonitoringOperationsTestCase(APITestCase):
 
 class WeatherServiceTestCase(unittest.TestCase):
     def test_get_weather_data(self):
-        # mock_response = {
-        #     "weather": "sunny",
-        #     "temperature": "70",
-        #     "wind_speed": "10",
-        #     "wind_direction": "N",
-        #     "precipitation": "0",
-        #     "visibility": "10",
-        #     "cloud_coverage": "0",
-        # }
-        # mock_get.return_value.status_code = 200
-        # mock_get.return_value.json.return_value = mock_response
-
         weather_service = WeatherService(
             api_url="https://api.open-meteo.com/v1/forecast"
         )

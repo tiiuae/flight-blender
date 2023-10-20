@@ -15,10 +15,6 @@ def get_weather_data(request):
 
 
 def _fetch_weather_data():
-    # weather_data_response = requests.get(
-    #     "https://api.open-meteo.com/v1/forecast?latitude=24.4512&longitude=54.397&hourly=temperature_2m&forecast_days=1"
-    # )
-
     weather_service = WeatherService("https://api.open-meteo.com/v1/forecast")
 
     weather_data_response = weather_service.get_weather_data(
