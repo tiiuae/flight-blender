@@ -18,6 +18,7 @@ OPERATION_STATES_LOOKUP = {
     "Activated": 2,
 }
 
+#TODO: Remove this
 (
     (0, _("Not Submitted")),
     (1, _("Accepted")),
