@@ -11,12 +11,11 @@ from rest_framework import status
 
 from auth_helper.common import get_redis
 from common.data_definitions import OPERATION_STATES
-from common.database_operations import (BlenderDatabaseReader,
-                                        BlenderDatabaseWriter)
+from common.database_operations import BlenderDatabaseWriter
 from conformance_monitoring_operations.conformance_checks_handler import \
     FlightOperationConformanceHelper
 from flight_blender.celery import app
-from flight_declaration_operations.models import FlightDeclaration
+from .models import FlightDeclaration,FlightAuthorization
 from notification_operations import notification
 from notification_operations.data_definitions import (NotificationLevel,
                                                       NotificationMessage)
@@ -172,7 +171,6 @@ def submit_flight_declaration_to_dss(flight_declaration_id: str):
 @app.task(name="submit_flight_declaration_to_dss_async")
 def submit_flight_declaration_to_dss_async(flight_declaration_id: str):
     my_dss_opint_creator = DSSOperationalIntentsCreator(flight_declaration_id)
-    my_database_reader = BlenderDatabaseReader()
     my_database_writer = BlenderDatabaseWriter()
 
     start_end_time_validated = (
@@ -241,10 +239,9 @@ def submit_flight_declaration_to_dss_async(flight_declaration_id: str):
 
     ###### Change via new state check helper
     fd = FlightDeclaration.objects.get(id=flight_declaration_id)
-    fa = my_database_reader.get_flight_authorization_by_flight_declaration_obj(
-        flight_declaration=fd
+    fa = FlightAuthorization.objects.get(
+                declaration=fd
     )
-
     logger.info("Saving created operational intent details..")
     created_opint = fa.dss_operational_intent_id
     view_r_bounds = fd.bounds

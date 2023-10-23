@@ -88,10 +88,8 @@ class Command(BaseCommand):
                     flight_declaration_id=flight_declaration_id
                 )
             )
-        flight_authorization = (
-            my_database_reader.get_flight_authorization_by_flight_declaration_obj(
-                flight_declaration=flight_declaration
-            )
+        flight_authorization = fdo_models.FlightAuthorization.objects.get(
+                declaration=flight_declaration
         )
         dss_operational_intent_ref_id = flight_authorization.dss_operational_intent_id
 
