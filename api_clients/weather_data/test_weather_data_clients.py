@@ -22,3 +22,12 @@ class MeteoApiClientTestCase(TestCase):
             self.fail("Data is not valid JSON")
 
         self.assertIsInstance(parsed_data, dict)
+        
+    def test_meteo_api_client_with_query_params(self):
+        self.client = MeteoApiClient(["foo", "bar"])    
+        
+        self.assertIsInstance(self.client, MeteoApiClient)
+        
+        data = self.client.get_data()
+        
+        self.assertDictContainsSubset({"foo": "bar"}, json.loads(data))
