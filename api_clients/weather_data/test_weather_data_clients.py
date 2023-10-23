@@ -9,3 +9,6 @@ class MeteoApiClientTestCase(TestCase):
 
     def test_meteo_api_client(self):
         self.assertIsInstance(self.client, MeteoApiClient)
+        
+        data = self.client.get_data()
+
