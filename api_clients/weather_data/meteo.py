@@ -1,3 +1,4 @@
+import json
 from api_clients.api_client import ApiClient
 
 
@@ -6,4 +7,7 @@ class MeteoApiClient(ApiClient):
         pass
 
     def get_data(self):
-        return ""
+        
+        return json.dumps({
+            "foo": "bar"
+        })
