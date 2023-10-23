@@ -3,7 +3,7 @@ import requests
 from dotenv import load_dotenv, find_dotenv
 import json
 from os import environ as env
-from common import get_redis()
+from common import get_redis
 import geojson
 from geojson import Polygon
 from datetime import datetime, timedelta
