@@ -23,8 +23,6 @@ class WeatherService:
         url = f"{self.api_url}"
         response = requests.get(url, params=params)
 
-        print("response: ", response)
-
         if response.status_code == status.HTTP_200_OK:
             return response.json()
         else:
