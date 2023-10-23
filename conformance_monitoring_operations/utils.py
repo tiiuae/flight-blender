@@ -14,7 +14,7 @@ from scd_operations.scd_data_definitions import LatLngPoint, Polygon, Volume4D
 
 from .conformance_state_checks import ConformanceChecksList
 from .data_helper import cast_to_volume4d
-
+import flight_declaration_operations.models as fdo_models
 
 load_dotenv(find_dotenv())
 
@@ -48,12 +48,9 @@ class BlenderConformanceEngine:
          - C8 Check if it is near a GeoFence and / breaches one
 
         """
-        my_database_reader = BlenderDatabaseReader()
         now = arrow.now()
 
-        flight_declaration = my_database_reader.get_flight_declaration_by_id(
-            flight_declaration_id=flight_declaration_id
-        )
+        flight_declaration = fdo_models.FlightDeclaration.objects.get(id=flight_declaration_id)
 
         # Flight Operation and Flight Authorization exists, create a notifications helper
 
@@ -152,9 +149,7 @@ class BlenderConformanceEngine:
 
         my_database_reader = BlenderDatabaseReader()
         now = arrow.now()
-        flight_declaration = my_database_reader.get_flight_declaration_by_id(
-            flight_declaration_id=flight_declaration_id
-        )
+        flight_declaration = fdo_models.FlightDeclaration.objects.get(id=flight_declaration_id)
         flight_authorization_exists = (
             my_database_reader.get_flight_authorization_by_flight_declaration(
                 flight_declaration_id=flight_declaration_id

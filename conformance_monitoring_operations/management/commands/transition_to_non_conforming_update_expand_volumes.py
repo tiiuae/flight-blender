@@ -15,6 +15,7 @@ from scd_operations.scd_data_definitions import (
     OperationalIntentReferenceDSSResponse,
     Time,
 )
+import flight_declaration_operations.models as fdo_models
 
 load_dotenv(find_dotenv())
 ENV_FILE = find_dotenv()
@@ -61,9 +62,7 @@ class Command(BaseCommand):
                 "Incomplete command, Flight Declaration ID not provided %s" % e
             )
         # Get the flight declaration
-        flight_declaration = my_database_reader.get_flight_declaration_by_id(
-            flight_declaration_id=flight_declaration_id
-        )
+        flight_declaration = fdo_models.FlightDeclaration.objects.get(id=flight_declaration_id)
         if not flight_declaration:
             raise CommandError(
                 "Flight Declaration with ID {flight_declaration_id} does not exist".format(
@@ -82,9 +81,7 @@ class Command(BaseCommand):
                 "Incomplete command, Flight Declaration ID not provided %s" % e
             )
 
-        flight_declaration = my_database_reader.get_flight_declaration_by_id(
-            flight_declaration_id=flight_declaration_id
-        )
+        flight_declaration = fdo_models.FlightDeclaration.objects.get(id=flight_declaration_id)
         if not flight_declaration:
             raise CommandError(
                 "Flight Declaration with ID {flight_declaration_id} does not exist".format(

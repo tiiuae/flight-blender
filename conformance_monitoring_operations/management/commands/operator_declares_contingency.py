@@ -21,6 +21,7 @@ from scd_operations.scd_data_definitions import (
     Time,
     Volume4D,
 )
+import flight_declaration_operations.models as fdo_models
 
 load_dotenv(find_dotenv())
 
@@ -59,8 +60,6 @@ class Command(BaseCommand):
         contingent_state = OPERATION_STATES[4][1]
 
         my_scd_dss_helper = SCDOperations()
-        my_database_reader = BlenderDatabaseReader()
-
         
         flight_declaration_id = options["flight_declaration_id"]
         if not flight_declaration_id:
@@ -68,9 +67,7 @@ class Command(BaseCommand):
                 "Incomplete command, Flight Declaration ID not provided %s"
             )
 
-        flight_declaration = my_database_reader.get_flight_declaration_by_id(
-            flight_declaration_id=flight_declaration_id
-        )
+        flight_declaration = fdo_models.FlightDeclaration.objects.get(id=flight_declaration_id)
         if not flight_declaration:
             raise CommandError(
                 "Flight Declaration with ID {flight_declaration_id} does not exist".format(

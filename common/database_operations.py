@@ -36,15 +36,6 @@ class BlenderDatabaseReader:
     def check_flight_declaration_exists(self, flight_declaration_id: str) -> bool:
         return FlightDeclaration.objects.filter(id=flight_declaration_id).exists()
 
-    def get_flight_declaration_by_id(
-        self, flight_declaration_id: str
-    ) -> Tuple[None, FlightDeclaration]:
-        try:
-            flight_declaration = FlightDeclaration.objects.get(id=flight_declaration_id)
-            return flight_declaration
-        except FlightDeclaration.DoesNotExist:
-            return None
-
     def get_current_flight_declaration_ids(self, now: str) -> Tuple[None, uuid4]:
         """This method gets flight operation ids that are active in the system within near the time interval"""
         n = arrow.get(now)
