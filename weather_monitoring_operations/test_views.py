@@ -19,15 +19,8 @@ class WeatherMonitoringOperationsTestCase(APITestCase):
         self.client.defaults["HTTP_AUTHORIZATION"] = "Bearer " + JWT
         self.api_url = reverse("get_weather_data")
 
-    def test_get_weather(self):
-        response = self.client.get(self.api_url, content_type="application/json")
-
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-
-        self.assertEqual(response["Content-Type"], "application/json")
-
     @patch("requests.get")
-    def test_fetch_weather_data(self, mock_get):
+    def test_get_weather(self, mock_get):
         mock_response = {
             "weather": "sunny",
             "temperature": "70",
@@ -37,12 +30,14 @@ class WeatherMonitoringOperationsTestCase(APITestCase):
             "visibility": "10",
             "cloud_coverage": "0",
         }
+
         mock_get.return_value.status_code = status.HTTP_200_OK
         mock_get.return_value.json.return_value = mock_response
+        response = self.client.get(self.api_url)
 
-        data = _fetch_weather_data()
-
-        self.assertEqual(data, mock_response)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response["Content-Type"], "application/json")
+        self.assertJSONEqual(response.content, mock_response)
 
 
 class WeatherServiceTestCase(unittest.TestCase):
