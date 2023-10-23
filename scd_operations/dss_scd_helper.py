@@ -12,7 +12,7 @@ from rid_operations import rtree_helper
 from shapely.geometry import Point, Polygon
 import shapely.geometry
 from pyproj import Proj
-from .scd_data_definitions import ImplicitSubscriptionParameters, Volume3D, Volume4D, OperationalIntentReference,OperationalIntentSubmissionSuccess, OperationalIntentReferenceDSSResponse, Time, LatLng, OperationalIntentSubmissionError, OperationalIntentSubmissionStatus, DeleteOperationalIntentConstuctor, CommonDSS4xxResponse,DeleteOperationalIntentResponse, DeleteOperationalIntentResponseSuccess, CommonDSS2xxResponse, QueryOperationalIntentPayload, OperationalIntentDetailsUSSResponse, OperationalIntentUSSDetails, Circle, Altitude, LatLngPoint, Radius,OpInttoCheckDetails
+from .scd_data_definitions import ImplicitSubscriptionParameters, Volume3D, Volume4D, OperationalIntentReference,OperationalIntentSubmissionSuccess, OperationalIntentReferenceDSSResponse, Time, LatLng, OperationalIntentSubmissionError, OperationalIntentSubmissionStatus, DeleteOperationalIntentConstuctor, CommonDSS4xxResponse,DeleteOperationalIntentResponse, DeleteOperationalIntentResponseSuccess, CommonDSS2xxResponse, QueryOperationalIntentPayload, OperationalIntentDetailsUSSResponse, OperationalIntentUSSDetails, Circle, Altitude, LatLngPoint, Radius,OpInttoCheckDetails,NotifyPeerUSSPostPayload,USSNotificationResponse
 from .scd_data_definitions import Polygon as Plgn
 import tldextract
 from os import environ as env
@@ -402,3 +402,38 @@ class SCDOperations():
             d_r = OperationalIntentSubmissionStatus(status = "conflict_with_flight", status_code = 500, message = "Flight not deconflicted, there are other flights in the area", dss_response={}, operational_intent_id = new_entity_id)
 
         return d_r
+    
+    def notify_peer_uss_of_created_updated_operational_intent(
+        self,
+        uss_base_url: str,
+        notification_payload: NotifyPeerUSSPostPayload,
+        audience: str,
+    ):
+        """This method posts operational intent details to peer USS via a POST request to /uss/v1/operational_intents"""
+        notification_url = uss_base_url + "uss/v1/operational_intents"
+        auth_token = self.get_auth_token(audience=audience)
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": "Bearer " + auth_token["access_token"],
+        }
+
+
+
+        uss_r = requests.post(
+            notification_url,
+            json=json.loads(json.dumps(asdict(notification_payload))),
+            headers=headers,
+        )
+
+        uss_r_status_code = uss_r.status_code
+
+        if uss_r_status_code == 204:
+            result_message = CommonDSS2xxResponse(message="Notified successfully")
+        else:
+            result_message = CommonDSS4xxResponse(message="Error in notification")
+
+        notification_result = USSNotificationResponse(
+            status=uss_r_status_code, message=result_message
+        )
+
+        return notification_result

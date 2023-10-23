@@ -310,3 +310,21 @@ class SuccessfulOperationalIntentFlightIDStorage:
 class OpInttoCheckDetails:
     ovn: str
     shape: Polygon
+
+
+@dataclass
+class SubscriptionState:
+    subscription_id: str
+    notification_index: int
+
+
+@dataclass
+class NotifyPeerUSSPostPayload:
+    operational_intent_id: uuid4
+    operational_intent: OperationalIntentDetailsUSSResponse
+    subscriptions: List[SubscriptionState]
+
+@dataclass
+class USSNotificationResponse:
+    status: int
+    message: Union[CommonDSS4xxResponse, CommonDSS2xxResponse]

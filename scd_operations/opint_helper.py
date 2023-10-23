@@ -4,8 +4,9 @@ from rid_operations import rtree_helper
 import uuid
 import arrow
 import json
+import tldextract
 from .data_definitions import FlightDeclarationOperationalIntentStorageDetails
-from .scd_data_definitions import OperationalIntentSubmissionStatus
+from .scd_data_definitions import OperationalIntentSubmissionStatus,NotifyPeerUSSPostPayload
 
 from dacite import from_dict
 import logging
@@ -110,3 +111,33 @@ class DSSOperationalIntentsCreator():
                 status="conflict_with_flight", status_code=500, message="Flight not deconflicted, there are other flights in the area", dss_response={}, operational_intent_id=new_entity_id)
 
         return op_int_submission
+
+
+    def notify_peer_uss(
+        self, uss_base_url: str, notification_payload: NotifyPeerUSSPostPayload
+    ):
+        """This method submits a flight declaration as a operational intent to the DSS"""
+        # Get the Flight Declaration object
+
+        my_scd_dss_helper = dss_scd_helper.SCDOperations()
+
+        try:
+            ext = tldextract.extract(uss_base_url)
+        except Exception:
+            uss_audience = "localhost"
+        else:
+            if ext.domain in [
+                "localhost",
+                "internal",
+            ]:  # for host.docker.internal type calls
+                uss_audience = "localhost"
+            else:
+                uss_audience = ".".join(
+                    ext[:3]
+                )  # get the subdomain, domain and suffix and create a audience and get credentials
+
+        my_scd_dss_helper.notify_peer_uss_of_created_updated_operational_intent(
+            uss_base_url=uss_base_url,
+            notification_payload=notification_payload,
+            audience=uss_audience,
+        )
