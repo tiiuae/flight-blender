@@ -33,4 +33,4 @@ class MeteoApiClient(ApiClient):
                 raise ValueError(f"Invalid weather attribute: {attr}")
             
     def _get_location_vector_query_params(self, location_vector):
-        return f"longitude={location_vector.longitude}&latitude={location_vector.latitude}&altitude={location_vector.altitude}"
+        return f"longitude={location_vector.longitude}&latitude={location_vector.latitude}&elevation={location_vector.elevation}"

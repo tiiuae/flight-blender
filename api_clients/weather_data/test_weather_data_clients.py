@@ -50,14 +50,15 @@ class MeteoApiClientTestCase(TestCase):
         self.assertIsNone(parsed_data.get("random"))
         self.assertRaises(ValueError, self.client.get_data, ["random"])
         
-    def test_meteo_api_client_build_url(self):
+    def test_meteo_api_client_get_api_url(self):
         
         url = self.client.get_api_url(location_vector=self.valid_location_vector)
         parsed_url = urlparse(url)
         query_params = parse_qs(parsed_url.query)
         
-        self.assertDictContainsSubset({"latitude": ["24.4512"]}, query_params)
-        self.assertDictContainsSubset({"longitude": ["54.397"]}, query_params)
+        self.assertEqual(query_params, query_params | {"latitude": ["24.4512"]})
+        self.assertEqual(query_params, query_params | {"longitude": ["54.397"]})
+        self.assertEqual(query_params, query_params | {"elevation": ["2"]})
 
     def _parse_data_fail_on_exception(self, data):
         try:
