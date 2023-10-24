@@ -13,21 +13,26 @@ class MeteoApiClientTestCase(TestCase):
         self.assertIsInstance(self.client, MeteoApiClient)
         
         data = self.client.get_data()
-        
         self.assertIsNotNone(data)
         
-        try:
-            parsed_data = json.loads(data)
-        except json.JSONDecodeError:
-            self.fail("Data is not valid JSON")
-
+        parsed_data = self._parse_data_fail_on_exception(data)
         self.assertIsInstance(parsed_data, dict)
         
     def test_meteo_api_client_with_query_params(self):
-        self.client = MeteoApiClient(["foo", "bar"])    
+        self.client = MeteoApiClient()    
         
         self.assertIsInstance(self.client, MeteoApiClient)
         
-        data = self.client.get_data()
+        data = self.client.get_data(["weathercode", "temperature_2m"])
+        parsed_data = self._parse_data_fail_on_exception(data)
         
-        self.assertDictContainsSubset({"foo": "bar"}, json.loads(data))
+        self.assertIsNotNone(parsed_data.get("weathercode"))
+        self.assertIsNotNone(parsed_data.get("temperature_2m"))
+        self.assertIsNone(parsed_data.get("random"))
+            
+    def _parse_data_fail_on_exception(self, data):
+        try:
+            return json.loads(data)
+        except:
+            self.fail("Data is not valid JSON")
+    
