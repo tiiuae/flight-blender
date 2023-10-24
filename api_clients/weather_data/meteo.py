@@ -16,8 +16,8 @@ class MeteoApiClient(ApiClient):
     
     def get_api_url(self, location_vector=None):
         self._check_location_vector(location_vector)
-        query_str = f"longitude={location_vector.longitude}&latitude={location_vector.latitude}&altitude={location_vector.altitude}&"
-        return "https://api.open-meteo.com/v1/forecast?" + query_str[:-1]
+        location_vector_query = self._get_location_vector_query_params(location_vector) 
+        return "https://api.open-meteo.com/v1/forecast?" + location_vector_query
     
     def _check_location_vector(self, location_vector):
         if not isinstance(location_vector, LocationVector):
@@ -31,3 +31,6 @@ class MeteoApiClient(ApiClient):
         for attr in weather_attrs:
             if attr not in self.available_attrs:
                 raise ValueError(f"Invalid weather attribute: {attr}")
+            
+    def _get_location_vector_query_params(self, location_vector):
+        return f"longitude={location_vector.longitude}&latitude={location_vector.latitude}&altitude={location_vector.altitude}"
