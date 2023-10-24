@@ -9,25 +9,28 @@ class MeteoApiClientTestCase(TestCase):
     def setUp(self):
         self.client = MeteoApiClient()
         self.valid_location_vector = LocationVector(24.4512, 54.397, 2)
+
+        self.assertTupleEqual(self.valid_location_vector, (24.4512, 54.397, 2))
         self.assertIsNotNone(self._parse_data_fail_on_exception("{\"test\": \"test\"}"))
         self.assertRaises(Exception, self._parse_data_fail_on_exception, "random")
 
-    def test_meteo_api_client_with_location_vector(self):
-        location_vector = LocationVector(24.4512, 54.397, "w")
+    def test_meteo_api_client_with_missing_location_vector(self):
+        location_vector = None
+        self.assertIsInstance(self.client, MeteoApiClient)
         self.assertRaises(ValueError, self.client.get_data, location_vector)
-
-        self.assertTupleEqual(self.valid_location_vector, (24.4512, 54.397, 2))
-
+        
+    def test_meteo_api_client_with_invalid_location_vector(self):
+        invalid_location_vector = LocationVector(24.4512, 54.397, "w")
+        self.assertRaises(ValueError, self.client.get_data, invalid_location_vector)
+        
+    def test_meteo_api_client_with_location_vector(self):
         data = self.client.get_data(self.valid_location_vector, ["weathercode", "temperature_2m"])
         parsed_data = self._parse_data_fail_on_exception(data)
 
         self.assertIsNotNone(parsed_data.get("weathercode"))
-        self.assertIsNotNone(parsed_data.get("temperature_2m"))
+        self.assertIsNotNone(parsed_data.get("temperature_2m"))        
 
     def test_meteo_api_client_get_data(self):
-        self.assertIsInstance(self.client, MeteoApiClient)
-        self.assertRaises(ValueError, self.client.get_data, None)
-
         data = self.client.get_data(self.valid_location_vector)
         self.assertIsNotNone(data)
 
