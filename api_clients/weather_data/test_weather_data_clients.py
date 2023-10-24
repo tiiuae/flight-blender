@@ -1,6 +1,8 @@
 import json
 from django.test import TestCase
 
+from urllib.parse import urlparse, parse_qs
+
 from api_clients.weather_data.meteo import MeteoApiClient
 from location_vector import LocationVector
 
@@ -47,6 +49,15 @@ class MeteoApiClientTestCase(TestCase):
         self.assertIsNotNone(parsed_data.get("temperature_2m"))
         self.assertIsNone(parsed_data.get("random"))
         self.assertRaises(ValueError, self.client.get_data, ["random"])
+        
+    def test_meteo_api_client_build_url(self):
+        
+        url = self.client.get_api_url(location_vector=self.valid_location_vector)
+        parsed_url = urlparse(url)
+        query_params = parse_qs(parsed_url.query)
+        
+        self.assertDictContainsSubset({"latitude": ["24.4512"]}, query_params)
+        self.assertDictContainsSubset({"longitude": ["54.397"]}, query_params)
 
     def _parse_data_fail_on_exception(self, data):
         try:
