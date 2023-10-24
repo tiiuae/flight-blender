@@ -3,13 +3,13 @@ import logging
 import django.dispatch
 from django.dispatch import receiver
 
-from common.database_operations import BlenderDatabaseReader
 from notification_operations import notification
 from notification_operations.data_definitions import NotificationLevel
 
 from .conformance_checks_handler import FlightOperationConformanceHelper
 from .conformance_state_checks import ConformanceChecksList
-import flight_declaration_operations.models as fdo_models
+from conformance_monitoring_operations import db_operations as db_ops
+
 logger = logging.getLogger("django")
 # Declare signals
 telemetry_non_conformance_signal = django.dispatch.Signal()
@@ -101,7 +101,7 @@ def process_telemetry_conformance_message(sender, **kwargs):
 
     # The operation is non-conforming, need to update the operational intent in the dss and notify peer USSP
     if event:
-        fd = fdo_models.FlightDeclaration.objects.get(id=flight_declaration_id)
+        fd = db_ops.get_flight_declaration_by_id(id=flight_declaration_id)
         original_state = fd.state
         fd.add_state_history_entry(
             original_state=original_state,
@@ -184,7 +184,7 @@ def process_flight_authorization_non_conformance_message(sender, **kwargs):
         event = "blender_confirms_contingent"
     # The operation is non-conforming, need to update the operational intent in the dss and notify peer USSP
     if event:
-        fd = fdo_models.FlightDeclaration.objects.get(id=flight_declaration_id)
+        fd = db_ops.get_flight_declaration_by_id(id=flight_declaration_id)
         original_state = fd.state
         fd.add_state_history_entry(
             original_state=original_state,

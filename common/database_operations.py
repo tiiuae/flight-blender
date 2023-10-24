@@ -28,11 +28,6 @@ class BlenderDatabaseReader:
     """
     A file to unify read and write operations to the database. Eventually caching etc. can be added via this file
     """
-
-    def get_all_flight_declarations(self) -> Tuple[None, List[FlightDeclaration]]:
-        flight_declarations = FlightDeclaration.objects.all()
-        return flight_declarations
-
     def check_flight_declaration_exists(self, flight_declaration_id: str) -> bool:
         return FlightDeclaration.objects.filter(id=flight_declaration_id).exists()
 

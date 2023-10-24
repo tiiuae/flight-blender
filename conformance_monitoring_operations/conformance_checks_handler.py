@@ -5,9 +5,8 @@ from os import environ as env
 from common.database_operations import BlenderDatabaseReader, BlenderDatabaseWriter
 from django.core import management
 from dotenv import find_dotenv, load_dotenv
-import flight_declaration_operations.models as fdo_models
 from .operation_states import FlightOperationStateMachine, get_status
-
+from conformance_monitoring_operations import db_operations as db_ops
 load_dotenv(find_dotenv())
 
 ENV_FILE = find_dotenv()
@@ -25,7 +24,7 @@ class FlightOperationConformanceHelper:
     def __init__(self, flight_declaration_id: str):
         self.flight_declaration_id = flight_declaration_id
         self.database_reader = BlenderDatabaseReader()
-        self.flight_declaration =  fdo_models.FlightDeclaration.objects.get(id=flight_declaration_id)
+        self.flight_declaration =  db_ops.get_flight_declaration_by_id(id=flight_declaration_id)
         self.database_writer = BlenderDatabaseWriter()
         self.ENABLE_CONFORMANCE_MONITORING = int(
             os.getenv("ENABLE_CONFORMANCE_MONITORING", 0)
