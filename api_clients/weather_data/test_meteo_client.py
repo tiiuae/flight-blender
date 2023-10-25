@@ -3,7 +3,7 @@ from django.test import TestCase
 
 from urllib.parse import urlparse, parse_qs
 
-from api_clients.weather_data.meteo import MeteoApiClient
+from api_clients.weather_data.meteo_client import MeteoApiClient
 from location_vector import LocationVector
 
 
@@ -29,30 +29,30 @@ class MeteoApiClientTestCase(TestCase):
         data = self.client.get_data(
             self.valid_location_vector, ["weathercode", "temperature_2m"]
         )
-        parsed_data = self._parse_data_fail_on_exception(data)
 
-        self.assertIsNotNone(parsed_data.get("weathercode"))
-        self.assertIsNotNone(parsed_data.get("temperature_2m"))
+        self._check_dataset_not_empty(data["hourly"]["weathercode"])
+        self._check_dataset_not_empty(data["hourly"]["temperature_2m"])
 
     def test_meteo_api_client_get_data(self):
         data = self.client.get_data(self.valid_location_vector)
         self.assertIsNotNone(data)
 
-        parsed_data = self._parse_data_fail_on_exception(data)
-        self.assertIsInstance(parsed_data, dict)
+        self._check_parameter_is_present(data, "latitude")
+        self._check_parameter_is_present(data, "longitude")
+        self._check_parameter_is_present(data, "elevation")
 
-    def test_meteo_api_client_get_data_with_query_params(self):
+    def test_meteo_api_client_get_data_with_less_query_params(self):
         self.assertIsInstance(self.client, MeteoApiClient)
 
-        data = self.client.get_data(
-            self.valid_location_vector, ["weathercode", "temperature_2m"]
-        )
-        parsed_data = self._parse_data_fail_on_exception(data)
+        data = self.client.get_data(self.valid_location_vector, ["weathercode"])
 
-        self.assertIsNotNone(parsed_data.get("weathercode"))
-        self.assertIsNotNone(parsed_data.get("temperature_2m"))
-        self.assertIsNone(parsed_data.get("random"))
+        hourly_stats = data["hourly"]
+
+        self.assertNotIn("temperature_2m", hourly_stats)
+        self.assertIn("weathercode", hourly_stats)
         self.assertRaises(ValueError, self.client.get_data, ["random"])
+
+        self._check_dataset_not_empty(data["hourly"]["weathercode"])
 
     def test_meteo_api_client_get_api_url_with_location_vector(self):
         self.assertRaises(
@@ -74,6 +74,13 @@ class MeteoApiClientTestCase(TestCase):
         self.assertEqual(query_params, query_params | {"elevation": ["2"]})
 
         self.assertEqual("hourly=weathercode,temperature_2m" in url, True)
+
+    def _check_dataset_not_empty(self, dataset):
+        self.assertIsNotNone(dataset)
+        self.assertTrue(len(dataset) > 0)
+
+    def _check_parameter_is_present(self, data, parameter):
+        self.assertIsNotNone(data.get(parameter))
 
     def _parse_data_fail_on_exception(self, data):
         try:
