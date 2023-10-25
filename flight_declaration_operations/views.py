@@ -5,6 +5,7 @@ import io
 import json
 import logging
 from dataclasses import asdict
+from os import environ as env
 from typing import List
 
 import arrow
@@ -33,10 +34,15 @@ from .serializers import (
     FlightDeclarationSerializer,
     FlightDeclarationStateSerializer,
 )
-from .tasks import submit_flight_declaration_to_dss
+from .tasks import (
+    submit_flight_declaration_to_dss,
+    submit_flight_declaration_to_dss_async,
+)
 from .utils import OperationalIntentsConverter
 
 logger = logging.getLogger("django")
+
+USSP_NETWORK_ENABLED = int(env.get("USSP_NETWORK_ENABLED", 0))
 
 
 def _parse_flight_declaration_request(json_payload):
@@ -193,12 +199,15 @@ def _get_operational_intent(fd_request):
 
 
 def _send_fd_creation_notifications(
-    flight_declaration_id: str, all_relevant_fences, all_relevant_declarations
+    flight_declaration_id: str,
+    all_relevant_fences,
+    all_relevant_declarations,
+    declaration_state,
 ) -> None:
     notification.send_operational_update_message.delay(
         flight_declaration_id=flight_declaration_id,
         message_text="Flight Declaration created..",
-        level=NotificationLevel.INFO.value,
+        level=NotificationLevel.INFO,
         log_message="Submitted Flight Declaration Notification",
     )
 
@@ -213,7 +222,7 @@ def _send_fd_creation_notifications(
             message_text="Self deconfliction failed for operation {operation_id} did not pass self-deconfliction, there are existing operations declared".format(
                 operation_id=flight_declaration_id
             ),
-            level=NotificationLevel.ERROR.value,
+            level=NotificationLevel.ERROR,
             log_message="Submitted Flight Declaration Notification",
         )
 
@@ -224,6 +233,11 @@ def _send_fd_creation_notifications(
         submit_flight_declaration_to_dss.delay(
             flight_declaration_id=flight_declaration_id
         )
+        # Only send it to the USSP network if the declaration is accepted and the network is available.
+        if declaration_state == 0 and USSP_NETWORK_ENABLED:
+            submit_flight_declaration_to_dss_async.delay(
+                flight_declaration_id=flight_declaration_id
+            )
     return None
 
 
@@ -256,7 +270,9 @@ def set_flight_declaration(request: HttpRequest):
             content_type="application/json",
         )
 
-    default_state = 1  # Default state is Accepted
+    declaration_state = (
+        0 if USSP_NETWORK_ENABLED else 1
+    )  # Default state is Processing if working with a DSS, otherwise it is Accepted
     (
         partial_op_int_ref,
         bounds,
@@ -278,21 +294,31 @@ def set_flight_declaration(request: HttpRequest):
         flight_declaration_raw_geojson=json.dumps(
             parsed_fd_request.flight_declaration_geo_json
         ),
-        state=default_state,
+        state=declaration_state,
     )
     fo.save()
-
+    fo.add_state_history_entry(
+        new_state=0, original_state=None, notes="Created Declaration"
+    )
+    if declaration_state != 0:
+        fo.add_state_history_entry(
+            new_state=declaration_state,
+            original_state=0,
+            notes="Rejected by Flight Blender because of conflicts",
+        )
     # Send flight creation notifications
     flight_declaration_id = str(fo.id)
     _send_fd_creation_notifications(
-        flight_declaration_id, all_relevant_fences, all_relevant_declarations
+        flight_declaration_id=flight_declaration_id,
+        all_relevant_fences=all_relevant_fences,
+        all_relevant_declarations=all_relevant_declarations,
+        declaration_state=declaration_state,
     )
-
     creation_response = FlightDeclarationCreateResponse(
         id=flight_declaration_id,
         message="Submitted Flight Declaration",
         is_approved=is_approved,
-        state=default_state,
+        state=declaration_state,
     )
 
     op = json.dumps(asdict(creation_response))
@@ -340,7 +366,9 @@ def set_signed_flight_declaration(request: HttpRequest):
             content_type="application/json",
         )
 
-    default_state = 1  # Default state is Accepted
+    declaration_state = (
+        0 if USSP_NETWORK_ENABLED else 1
+    )  # Default state is Processing if working with a DSS, otherwise it is Accepted
     (
         partial_op_int_ref,
         bounds,
@@ -362,21 +390,32 @@ def set_signed_flight_declaration(request: HttpRequest):
         flight_declaration_raw_geojson=json.dumps(
             parsed_fd_request.flight_declaration_geo_json
         ),
-        state=default_state,
+        state=declaration_state,
     )
     fo.save()
-
+    fo.add_state_history_entry(
+        new_state=0, original_state=None, notes="Created Declaration"
+    )
+    if declaration_state != 0:
+        fo.add_state_history_entry(
+            new_state=declaration_state,
+            original_state=0,
+            notes="Rejected by Flight Blender because of conflicts",
+        )
     # Send flight creation notifications
     flight_declaration_id = str(fo.id)
     _send_fd_creation_notifications(
-        flight_declaration_id, all_relevant_fences, all_relevant_declarations
+        flight_declaration_id=flight_declaration_id,
+        all_relevant_fences=all_relevant_fences,
+        all_relevant_declarations=all_relevant_declarations,
+        declaration_state=declaration_state,
     )
 
     creation_response = FlightDeclarationCreateResponse(
         id=flight_declaration_id,
         message="Submitted Flight Declaration",
         is_approved=is_approved,
-        state=default_state,
+        state=declaration_state,
     )
 
     op = json.dumps(asdict(creation_response))

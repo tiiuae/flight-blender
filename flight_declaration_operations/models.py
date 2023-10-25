@@ -1,25 +1,16 @@
-from django.db import models
+import itertools
 import uuid
 from datetime import datetime
+from typing import List
+
+from django.db import models
 from django.utils.translation import gettext_lazy as _
+
+from common.data_definitions import OPERATION_STATES, OPERATION_TYPES
 
 
 class FlightDeclaration(models.Model):
     """A flight operation object for permission"""
-
-    OPERATION_TYPES = (
-        (1, _("VLOS")),
-        (2, _("BVLOS")),
-        (3, _("CREWED")),
-    )
-    OPERATION_STATE = (
-        (0, _("Not Submitted")),
-        (1, _("Accepted")),
-        (2, _("Activated")),
-        (3, _("Nonconforming")),
-        (4, _("Contingent")),
-        (5, _("Ended")),
-    )
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     operational_intent = models.JSONField()
@@ -35,7 +26,7 @@ class FlightDeclaration(models.Model):
         help_text="Specify the ID of the aircraft for this declaration",
     )
     state = models.IntegerField(
-        choices=OPERATION_STATE, default=0, help_text="Set the state of operation"
+        choices=OPERATION_STATES, default=0, help_text="Set the state of operation"
     )
     bounds = models.CharField(max_length=140)
 
@@ -57,6 +48,45 @@ class FlightDeclaration(models.Model):
 
     class Meta:
         ordering = ["-created_at"]
+
+    def add_state_history_entry(
+        self, original_state: int, new_state: int, notes: str = "", **kwargs
+    ):
+        """Add a history tracking entry for this FlightDeclaration.
+        Args:
+            user (User): The user performing this action # Not implemented
+            notes (str, optional): URL associated with this tracking entry. Defaults to "".
+        """
+
+        original_state = original_state if original_state is not None else "start"
+        deltas = {"original_state": str(original_state), "new_state": str(new_state)}
+
+        entry = FlightOperationTracking.objects.create(
+            flight_declaration=self,
+            notes=notes,
+            deltas=deltas,
+        )
+
+        entry.save()
+
+    def get_state_history(self) -> List[int]:
+        """
+        This method gets the state history of a flight declaration and then parses it to build a transition
+        """
+        all_states = []
+        historic_states = FlightOperationTracking.objects.filter(
+            flight_declaration=self
+        ).order_by("created_at")
+        for historic_state in historic_states:
+            delta = historic_state.deltas
+            original_state = delta["original_state"]
+            new_state = delta["new_state"]
+            if original_state == "start":
+                original_state = -1
+            all_states.append(int(original_state))
+            all_states.append(int(new_state))
+        distinct_states = [k for k, g in itertools.groupby(all_states)]
+        return distinct_states
 
     def __unicode__(self):
         return self.originating_party + " " + str(self.id)
