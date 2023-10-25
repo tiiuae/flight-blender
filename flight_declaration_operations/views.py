@@ -35,7 +35,6 @@ from .serializers import (
     FlightDeclarationStateSerializer,
 )
 from .tasks import (
-    submit_flight_declaration_to_dss,
     submit_flight_declaration_to_dss_async,
 )
 from .utils import OperationalIntentsConverter
@@ -229,9 +228,6 @@ def _send_fd_creation_notifications(
     else:
         logger.info(
             "Self deconfliction success, this declaration will be sent to the DSS system, if a DSS URL is provided.."
-        )
-        submit_flight_declaration_to_dss.delay(
-            flight_declaration_id=flight_declaration_id
         )
         # Only send it to the USSP network if the declaration is accepted and the network is available.
         if declaration_state == 0 and USSP_NETWORK_ENABLED:

@@ -126,17 +126,6 @@ class BlenderDatabaseWriter:
         except Exception as e:
             return False
 
-    def update_flight_operation_state(
-        self, flight_declaration_id: str, state: int
-    ) -> bool:
-        try:
-            flight_declaration = FlightDeclaration.objects.get(id=flight_declaration_id)
-            flight_declaration.state = state
-            flight_declaration.save()
-            return True
-        except Exception as e:
-            return False
-
     def create_conformance_monitoring_periodic_task(
         self, flight_declaration: FlightDeclaration
     ) -> bool:

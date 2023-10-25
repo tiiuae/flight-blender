@@ -11,7 +11,6 @@ from rest_framework import status
 
 from auth_helper.common import get_redis
 from common.data_definitions import OPERATION_STATES
-from common.database_operations import BlenderDatabaseWriter
 from conformance_monitoring_operations.conformance_checks_handler import \
     FlightOperationConformanceHelper
 from flight_blender.celery import app
@@ -171,8 +170,6 @@ def submit_flight_declaration_to_dss(flight_declaration_id: str):
 @app.task(name="submit_flight_declaration_to_dss_async")
 def submit_flight_declaration_to_dss_async(flight_declaration_id: str):
     my_dss_opint_creator = DSSOperationalIntentsCreator(flight_declaration_id)
-    my_database_writer = BlenderDatabaseWriter()
-
     start_end_time_validated = (
         my_dss_opint_creator.validate_flight_declaration_start_end_time()
     )
@@ -280,9 +277,8 @@ def submit_flight_declaration_to_dss_async(flight_declaration_id: str):
         original_state=original_state, new_state=accepted_state, event="dss_accepts"
     )
     if transition_valid:
-        my_database_writer.update_flight_operation_state(
-            flight_declaration_id=flight_declaration_id, state=accepted_state
-        )
+        fd.state = accepted_state
+        fd.save()
         logger.info(
             "The state change transition to Accepted state from current state Created is valid.."
         )
