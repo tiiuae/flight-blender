@@ -207,7 +207,7 @@ def _send_fd_creation_notifications(
     notification.send_operational_update_message.delay(
         flight_declaration_id=flight_declaration_id,
         message_text="Flight Declaration created..",
-        level=NotificationLevel.INFO,
+        level=NotificationLevel.INFO.value,
         log_message="Submitted Flight Declaration Notification",
     )
 
@@ -222,7 +222,7 @@ def _send_fd_creation_notifications(
             message_text="Self deconfliction failed for operation {operation_id} did not pass self-deconfliction, there are existing operations declared".format(
                 operation_id=flight_declaration_id
             ),
-            level=NotificationLevel.ERROR,
+            level=NotificationLevel.ERROR.value,
             log_message="Submitted Flight Declaration Notification",
         )
 

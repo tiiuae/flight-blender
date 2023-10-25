@@ -36,7 +36,7 @@ def process_telemetry_conformance_message(sender, **kwargs):
         notification.send_operational_update_message(
             flight_declaration_id=flight_declaration_id,
             message_text=invalid_aircraft_id_msg,
-            level=NotificationLevel.ERROR,
+            level=NotificationLevel.ERROR.value,
             log_message="Non conformance message in Telemetry",
         )
 
@@ -51,7 +51,7 @@ def process_telemetry_conformance_message(sender, **kwargs):
         notification.send_operational_update_message(
             flight_declaration_id=flight_declaration_id,
             message_text=flight_state_not_correct_msg,
-            level=NotificationLevel.ERROR,
+            level=NotificationLevel.ERROR.value,
             log_message="Non conformance message in Telemetry",
         )
         event = "blender_confirms_contingent"
@@ -65,7 +65,7 @@ def process_telemetry_conformance_message(sender, **kwargs):
         notification.send_operational_update_message(
             flight_declaration_id=flight_declaration_id,
             message_text=telemetry_timestamp_not_within_op_start_end_msg,
-            level=NotificationLevel.ERROR,
+            level=NotificationLevel.ERROR.value,
             log_message="Non conformance message in Telemetry",
         )
         new_state = 3
@@ -79,7 +79,7 @@ def process_telemetry_conformance_message(sender, **kwargs):
         notification.send_operational_update_message(
             flight_declaration_id=flight_declaration_id,
             message_text=aircraft_altitude_nonconformant_msg,
-            level=NotificationLevel.ERROR,
+            level=NotificationLevel.ERROR.value,
             log_message="Non conformance message in Telemetry",
         )
         new_state = 3
@@ -93,7 +93,7 @@ def process_telemetry_conformance_message(sender, **kwargs):
         notification.send_operational_update_message(
             flight_declaration_id=flight_declaration_id,
             message_text=aircraft_bounds_nonconformant_msg,
-            level=NotificationLevel.ERROR,
+            level=NotificationLevel.ERROR.value,
             log_message="Non conformance message in Telemetry",
         )
         new_state = 3
@@ -134,7 +134,7 @@ def process_flight_authorization_non_conformance_message(sender, **kwargs):
         notification.send_operational_update_message(
             flight_declaration_id=flight_declaration_id,
             message_text=telemetry_not_being_received_error_msg,
-            level=NotificationLevel.ERROR,
+            level=NotificationLevel.ERROR.value,
             log_message="Non conformance message in Flight Authorization",
         )
         event = "timeout"
@@ -148,7 +148,7 @@ def process_flight_authorization_non_conformance_message(sender, **kwargs):
         notification.send_operational_update_message(
             flight_declaration_id=flight_declaration_id,
             message_text=telemetry_never_received_error_msg,
-            level=NotificationLevel.ERROR,
+            level=NotificationLevel.ERROR.value,
             log_message="Non conformance message in Flight Authorization",
         )
 
@@ -163,7 +163,7 @@ def process_flight_authorization_non_conformance_message(sender, **kwargs):
         notification.send_operational_update_message(
             flight_declaration_id=flight_declaration_id,
             message_text=flight_state_not_conformant,
-            level=NotificationLevel.ERROR,
+            level=NotificationLevel.ERROR.value,
             log_message="Non conformance message in Flight Authorization",
         )
         event = "blender_confirms_contingent"
@@ -178,7 +178,7 @@ def process_flight_authorization_non_conformance_message(sender, **kwargs):
         notification.send_operational_update_message(
             flight_declaration_id=flight_declaration_id,
             message_text=authorization_not_granted_message,
-            level=NotificationLevel.ERROR,
+            level=NotificationLevel.ERROR.value,
             log_message="Non conformance message in Flight Authorization",
         )
         event = "blender_confirms_contingent"

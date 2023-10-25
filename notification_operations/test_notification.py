@@ -17,7 +17,7 @@ class NotificationSendingTests(TestCase):
         notification.send_operational_update_message(
             flight_declaration_id="0001",
             message_text="Test Message",
-            level=NotificationLevel.INFO,
+            level=NotificationLevel.INFO.value,
         )
         mock_notification_logger.info.assert_called_once_with("No AMQP URL specified")
 
@@ -29,7 +29,7 @@ class NotificationSendingTests(TestCase):
         notification.send_operational_update_message(
             flight_declaration_id="0001",
             message_text="Test Message",
-            level=NotificationLevel.INFO,
+            level=NotificationLevel.INFO.value,
         )
         mock_notification_logger.info.assert_called_once_with("No log message provided")
 
@@ -41,7 +41,7 @@ class NotificationSendingTests(TestCase):
         notification.send_operational_update_message(
             flight_declaration_id="0001",
             message_text="Test Message",
-            level=NotificationLevel.ERROR,
+            level=NotificationLevel.ERROR.value,
             log_message="This is a test log message",
         )
         mock_notification_logger.info.assert_called_once_with(
@@ -54,7 +54,7 @@ class NotificationSendingTests(TestCase):
         notification.send_operational_update_message(
             flight_declaration_id="0001",
             message_text="Test Message",
-            level=NotificationLevel.ERROR,
+            level=NotificationLevel.ERROR.value,
             timestamp="Test time string",
             log_message="This is a test log message",
         )
@@ -72,7 +72,7 @@ class NotificationSendingTests(TestCase):
         notification.send_operational_update_message(
             flight_declaration_id="0001",
             message_text="Test Message",
-            level=NotificationLevel.CRITICAL,
+            level=NotificationLevel.CRITICAL.value,
             timestamp="Test time string",
             log_message="This is a test log message",
         )
