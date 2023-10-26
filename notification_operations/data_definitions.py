@@ -15,13 +15,13 @@ class NotificationMessage:
     """This object will hold messages that will go to the operational Notifications"""
 
     body: str
-    level: NotificationLevel
+    level: str
     timestamp: str
     
     def to_dict(self):
-        # Convert the Enum to its string representation
+        # Convert the obj to its string representation
         return {
             "body": self.body,
-            "level": self.level.value,
+            "level": self.level,
             "timestamp": self.timestamp,
         }
