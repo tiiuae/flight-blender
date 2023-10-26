@@ -4,7 +4,7 @@ from auth_helper.common import get_redis
 import json 
 from shapely.geometry import Polygon
 from rtree import index
-from scd_operations.scd_data_definitions import OpInttoCheckDetails
+from scd_operations.data_definitions import OpInttoCheckDetails
 import hashlib
 
 

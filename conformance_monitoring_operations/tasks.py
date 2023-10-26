@@ -11,7 +11,7 @@ from notification_operations.data_definitions import (
     NotificationMessage,
 )
 from notification_operations.notification_helper import NotificationFactory
-from scd_operations.scd_data_definitions import LatLngPoint
+from scd_operations.data_definitions import LatLngPoint
 
 from . import custom_signals
 from .utils import BlenderConformanceEngine

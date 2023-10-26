@@ -19,8 +19,8 @@ from notification_operations import notification
 from notification_operations.data_definitions import (NotificationLevel,
                                                       NotificationMessage)
 from notification_operations.notification_helper import NotificationFactory
-from scd_operations.opint_helper import DSSOperationalIntentsCreator
-from scd_operations.scd_data_definitions import (
+from operation_intent.helper import DSSOperationalIntentsCreator
+from scd_operations.data_definitions import (
     NotifyPeerUSSPostPayload, OperationalIntentDetailsUSSResponse,
     OperationalIntentStorage, OperationalIntentUSSDetails, SubscriptionState,
     SuccessfulOperationalIntentFlightIDStorage)

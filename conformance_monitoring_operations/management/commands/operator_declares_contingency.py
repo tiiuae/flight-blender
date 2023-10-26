@@ -15,7 +15,7 @@ from conformance_monitoring_operations.data_definitions import PolygonAltitude
 from flight_declaration_operations.utils import OperationalIntentsConverter
 from flight_feed_operations import flight_stream_helper
 from scd_operations.dss_scd_helper import SCDOperations
-from scd_operations.scd_data_definitions import (
+from scd_operations.data_definitions import (
     OperationalIntentReferenceDSSResponse,
     Polygon,
     Time,

@@ -11,7 +11,7 @@ import os
 import json
 from dataclasses import asdict
 import logging
-from scd_operations.scd_data_definitions import PartialCreateOperationalIntentReference
+from scd_operations.data_definitions import PartialCreateOperationalIntentReference
 from dotenv import load_dotenv, find_dotenv
 
 logger = logging.getLogger("django")

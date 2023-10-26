@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from scd_operations.scd_data_definitions import OperationalIntentDetailsUSSResponse
+from scd_operations.data_definitions import OperationalIntentDetailsUSSResponse
 from rid_operations.rid_utils import RIDOperatorDetails
 @dataclass
 class OperationalIntentNotFoundResponse:

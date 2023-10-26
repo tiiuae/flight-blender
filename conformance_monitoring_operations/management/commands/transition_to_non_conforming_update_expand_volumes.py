@@ -11,7 +11,7 @@ from dotenv import find_dotenv, load_dotenv
 
 from auth_helper.common import get_redis
 from scd_operations.dss_scd_helper import SCDOperations
-from scd_operations.scd_data_definitions import (
+from scd_operations.data_definitions import (
     OperationalIntentReferenceDSSResponse,
     Time,
 )

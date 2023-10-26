@@ -9,7 +9,7 @@ from uuid import UUID
 from django.http import JsonResponse
 from django.utils.datastructures import MultiValueDictKeyError
 from .uss_data_definitions import OperationalIntentNotFoundResponse, OperationalIntentDetails, UpdateOperationalIntent, GenericErrorResponseMessage, SummaryFlightsOnly,OperatorDetailsSuccessResponse, FlightDetailsNotFoundMessage
-from scd_operations.scd_data_definitions import OperationalIntentDetailsUSSResponse, OperationalIntentUSSDetails, OperationalIntentReferenceDSSResponse, Time
+from scd_operations.data_definitions import OperationalIntentDetailsUSSResponse, OperationalIntentUSSDetails, OperationalIntentReferenceDSSResponse, Time
 from rid_operations.rid_utils import RIDAuthData, RIDAircraftPosition, RIDHeight, RIDAircraftState, RIDOperatorDetails, RIDFlightResponse, LatLngPoint, RIDOperatorDetails, TelemetryFlightDetails
 import arrow
 import json 

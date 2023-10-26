@@ -1,4 +1,4 @@
-from scd_operations.scd_data_definitions import (
+from scd_operations.data_definitions import (
     Altitude,
     Circle,
     LatLngPoint,

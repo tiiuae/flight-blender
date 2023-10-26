@@ -5,11 +5,11 @@ import shapely.geometry
 from dotenv import find_dotenv, load_dotenv
 from geojson import FeatureCollection
 from pyproj import Proj
-from scd_operations.scd_data_definitions import (
+from scd_operations.data_definitions import (
     Altitude, LatLngPoint, OperationalIntentUSSDetails,
     PartialCreateOperationalIntentReference)
-from scd_operations.scd_data_definitions import Polygon as Plgn
-from scd_operations.scd_data_definitions import Time, Volume3D, Volume4D
+from scd_operations.data_definitions import Polygon as Plgn
+from scd_operations.data_definitions import Time, Volume3D, Volume4D
 from shapely.geometry import Point, Polygon, shape
 from shapely.ops import unary_union
 
