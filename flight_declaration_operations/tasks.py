@@ -23,7 +23,7 @@ load_dotenv(find_dotenv())
 def _send_flight_approved_message(
     flight_declaration_id: str,
     message_text: str,
-    level: str = NotificationLevel.INFO,
+    level: str = NotificationLevel.INFO.value,
     timestamp: str = None,
 ):
     amqp_connection_url = env.get("AMQP_URL", 0)
@@ -63,7 +63,7 @@ def submit_flight_declaration_to_dss(flight_declaration_id: str):
         _send_flight_approved_message.delay(
             flight_declaration_id=flight_declaration_id,
             message_text=message,
-            level=NotificationLevel.INFO,
+            level=NotificationLevel.INFO.value,
         )
         fo.save()
         return
@@ -85,7 +85,7 @@ def submit_flight_declaration_to_dss(flight_declaration_id: str):
         notification.send_operational_update_message.delay(
             flight_declaration_id=flight_declaration_id,
             message_text=validation_not_ok_msg,
-            level=NotificationLevel.ERROR,
+            level=NotificationLevel.ERROR.value,
             log_message="Submitted Flight Declaration Notification",
         )
         return
@@ -96,7 +96,7 @@ def submit_flight_declaration_to_dss(flight_declaration_id: str):
     notification.send_operational_update_message.delay(
         flight_declaration_id=flight_declaration_id,
         message_text=validation_ok_msg,
-        level=NotificationLevel.INFO,
+        level=NotificationLevel.INFO.value,
         log_message="Submitted Flight Declaration Notification",
     )
 
@@ -117,7 +117,7 @@ def submit_flight_declaration_to_dss(flight_declaration_id: str):
         notification.send_operational_update_message.delay(
             flight_declaration_id=flight_declaration_id,
             message_text=dss_submission_error_msg,
-            level=NotificationLevel.ERROR,
+            level=NotificationLevel.ERROR.value,
             log_message="Submitted Flight Declaration Notification",
         )
         return
@@ -133,7 +133,7 @@ def submit_flight_declaration_to_dss(flight_declaration_id: str):
     notification.send_operational_update_message.delay(
         flight_declaration_id=flight_declaration_id,
         message_text=submission_success_msg,
-        level=NotificationLevel.INFO,
+        level=NotificationLevel.INFO.value,
         log_message="Submitted Flight Declaration Notification",
     )
 
@@ -147,7 +147,7 @@ def submit_flight_declaration_to_dss(flight_declaration_id: str):
     notification.send_operational_update_message.delay(
         flight_declaration_id=flight_declaration_id,
         message_text=submission_state_updated_msg,
-        level=NotificationLevel.INFO,
+        level=NotificationLevel.INFO.value,
         log_message="Submitted Flight Declaration Notification",
     )
     fo.save()

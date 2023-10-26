@@ -6,7 +6,7 @@ from dotenv import find_dotenv, load_dotenv
 
 from flight_blender.celery import app
 
-from .data_definitions import NotificationLevel, NotificationMessage
+from .data_definitions import NotificationMessage
 from .notification_helper import NotificationFactory
 
 logger = logging.getLogger("django")
@@ -17,7 +17,7 @@ load_dotenv(find_dotenv())
 def send_operational_update_message(
     flight_declaration_id: str,
     message_text: str,
-    level: NotificationLevel = NotificationLevel.INFO,
+    level:str,
     timestamp: str = None,
     log_message: str = "No log message provided",
 ):
