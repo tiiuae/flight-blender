@@ -26,7 +26,7 @@ from security import signing
 
 from .data_definitions import FlightDeclarationCreateResponse
 from .flight_declarations_rtree_helper import FlightDeclarationRTreeIndexFactory
-from .models import FlightDeclaration
+from .models import FlightDeclaration, FlightAuthorization
 from .pagination import StandardResultsSetPagination
 from .serializers import (
     FlightDeclarationApprovalSerializer,
@@ -277,7 +277,7 @@ def set_flight_declaration(request: HttpRequest):
         is_approved,
     ) = _get_operational_intent(parsed_fd_request)
 
-    fo = FlightDeclaration(
+    fd = FlightDeclaration(
         operational_intent=json.loads(json.dumps(asdict(partial_op_int_ref))),
         bounds=bounds,
         type_of_operation=parsed_fd_request.type_of_operation,
@@ -292,18 +292,22 @@ def set_flight_declaration(request: HttpRequest):
         ),
         state=declaration_state,
     )
-    fo.save()
-    fo.add_state_history_entry(
+    fd.save()
+    # Add new FlightAuthorization
+    fa = FlightAuthorization(declaration=fd)
+    fa.save()
+
+    fd.add_state_history_entry(
         new_state=0, original_state=None, notes="Created Declaration"
     )
     if declaration_state != 0:
-        fo.add_state_history_entry(
+        fd.add_state_history_entry(
             new_state=declaration_state,
             original_state=0,
             notes="Rejected by Flight Blender because of conflicts",
         )
     # Send flight creation notifications
-    flight_declaration_id = str(fo.id)
+    flight_declaration_id = str(fd.id)
     _send_fd_creation_notifications(
         flight_declaration_id=flight_declaration_id,
         all_relevant_fences=all_relevant_fences,
@@ -373,7 +377,7 @@ def set_signed_flight_declaration(request: HttpRequest):
         is_approved,
     ) = _get_operational_intent(parsed_fd_request)
 
-    fo = FlightDeclaration(
+    fd = FlightDeclaration(
         operational_intent=json.loads(json.dumps(asdict(partial_op_int_ref))),
         bounds=bounds,
         type_of_operation=parsed_fd_request.type_of_operation,
@@ -388,18 +392,22 @@ def set_signed_flight_declaration(request: HttpRequest):
         ),
         state=declaration_state,
     )
-    fo.save()
-    fo.add_state_history_entry(
+    fd.save()
+    # Add new FlightAuthorization
+    fa = FlightAuthorization(declaration=fd)
+    fa.save()
+
+    fd.add_state_history_entry(
         new_state=0, original_state=None, notes="Created Declaration"
     )
     if declaration_state != 0:
-        fo.add_state_history_entry(
+        fd.add_state_history_entry(
             new_state=declaration_state,
             original_state=0,
             notes="Rejected by Flight Blender because of conflicts",
         )
     # Send flight creation notifications
-    flight_declaration_id = str(fo.id)
+    flight_declaration_id = str(fd.id)
     _send_fd_creation_notifications(
         flight_declaration_id=flight_declaration_id,
         all_relevant_fences=all_relevant_fences,

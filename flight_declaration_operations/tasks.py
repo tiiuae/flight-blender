@@ -11,19 +11,26 @@ from rest_framework import status
 
 from auth_helper.common import get_redis
 from common.data_definitions import OPERATION_STATES
-from conformance_monitoring_operations.conformance_checks_handler import \
-    FlightOperationConformanceHelper
+from conformance_monitoring_operations.conformance_checks_handler import (
+    FlightOperationConformanceHelper,
+)
 from flight_blender.celery import app
-from .models import FlightDeclaration,FlightAuthorization
+from .models import FlightDeclaration, FlightAuthorization
 from notification_operations import notification
-from notification_operations.data_definitions import (NotificationLevel,
-                                                      NotificationMessage)
+from notification_operations.data_definitions import (
+    NotificationLevel,
+    NotificationMessage,
+)
 from notification_operations.notification_helper import NotificationFactory
 from operation_intent.helper import DSSOperationalIntentsCreator
 from scd_operations.data_definitions import (
-    NotifyPeerUSSPostPayload, OperationalIntentDetailsUSSResponse,
-    OperationalIntentStorage, OperationalIntentUSSDetails, SubscriptionState,
-    SuccessfulOperationalIntentFlightIDStorage)
+    NotifyPeerUSSPostPayload,
+    OperationalIntentDetailsUSSResponse,
+    OperationalIntentStorage,
+    OperationalIntentUSSDetails,
+    SubscriptionState,
+    SuccessfulOperationalIntentFlightIDStorage,
+)
 
 logger = logging.getLogger("django")
 load_dotenv(find_dotenv())
@@ -166,12 +173,12 @@ def submit_flight_declaration_to_dss(flight_declaration_id: str):
     )
 
 
-#TODO: This function is not async yet!
+# TODO: This function is not async yet!
 @app.task(name="submit_flight_declaration_to_dss_async")
 def submit_flight_declaration_to_dss_async(flight_declaration_id: str):
-    my_dss_opint_creator = DSSOperationalIntentsCreator(flight_declaration_id)
+    dss_opint_creator = DSSOperationalIntentsCreator(flight_declaration_id)
     start_end_time_validated = (
-        my_dss_opint_creator.validate_flight_declaration_start_end_time()
+        dss_opint_creator.validate_flight_declaration_start_end_time()
     )
 
     logger.info("Flight Operation Validation status %s" % start_end_time_validated)
@@ -200,7 +207,7 @@ def submit_flight_declaration_to_dss_async(flight_declaration_id: str):
     )
     logger.info("Submitting to DSS..")
 
-    opint_submission_result = my_dss_opint_creator.submit_flight_declaration_to_dss()
+    opint_submission_result = dss_opint_creator.submit_flight_declaration_to_dss()
 
     if opint_submission_result.status_code not in [
         status.HTTP_200_OK,
@@ -210,7 +217,7 @@ def submit_flight_declaration_to_dss_async(flight_declaration_id: str):
             "Error in submitting Flight Declaration to the DSS %s"
             % opint_submission_result.status
         )
-        dss_submission_error_msg = "Flight Operation with ID {operation_id} could not be submitted to the DSS, check the Auth server and / or the DSS URL".format(
+        dss_submission_error_msg = "Flight Operation with ID {operation_id} could not be submitted to the DSS, check the Auth server, submitted data to Blender and / or the DSS URL".format(
             operation_id=flight_declaration_id
         )
         notification.send_operational_update_message.delay(
@@ -236,9 +243,7 @@ def submit_flight_declaration_to_dss_async(flight_declaration_id: str):
 
     ###### Change via new state check helper
     fd = FlightDeclaration.objects.get(id=flight_declaration_id)
-    fa = FlightAuthorization.objects.get(
-                declaration=fd
-    )
+    fa = FlightAuthorization.objects.get(declaration=fd)
     logger.info("Saving created operational intent details..")
     created_opint = fa.dss_operational_intent_id
     view_r_bounds = fd.bounds
@@ -263,7 +268,7 @@ def submit_flight_declaration_to_dss_async(flight_declaration_id: str):
         operation_id=str(flight_declaration_id), operational_intent_id=created_opint
     )
 
-    #TODO: Make these kind of Redis topic constants.
+    # TODO: Make these kind of Redis topic constants.
     opint_flight_ref = "opint_flightref." + created_opint
     r.set(opint_flight_ref, json.dumps(asdict(flight_op_int_storage)))
     r.expire(name=opint_flight_ref, time=delta)
@@ -273,10 +278,10 @@ def submit_flight_declaration_to_dss_async(flight_declaration_id: str):
     conformance_helper = FlightOperationConformanceHelper(
         flight_declaration_id=flight_declaration_id
     )
-    transition_valid = conformance_helper.verify_operation_state_transition(
+    is_transition_valid = conformance_helper.verify_operation_state_transition(
         original_state=original_state, new_state=accepted_state, event="dss_accepts"
     )
-    if transition_valid:
+    if is_transition_valid:
         fd.state = accepted_state
         fd.save()
         logger.info(
@@ -288,54 +293,52 @@ def submit_flight_declaration_to_dss_async(flight_declaration_id: str):
             notes="Successfully submitted to the DSS",
         )
 
-        submission_state_updated_msg = "Flight Operation with ID {operation_id} has a updated state: Accepted. ".format(
-            operation_id=flight_declaration_id
-        )
-        notification.send_operational_update_message.delay(
-            flight_declaration_id=flight_declaration_id,
-            message_text=submission_state_updated_msg,
-            level=NotificationLevel.INFO.value,
-        )
+    submission_state_updated_msg = "Flight Operation with ID {operation_id} has a updated state: Accepted. ".format(
+        operation_id=flight_declaration_id
+    )
+    notification.send_operational_update_message.delay(
+        flight_declaration_id=flight_declaration_id,
+        message_text=submission_state_updated_msg,
+        level=NotificationLevel.INFO.value,
+    )
 
-        logger.info(
-            "Details of the submission status %s" % opint_submission_result.message
-        )
+    logger.info("Details of the submission status %s" % opint_submission_result.message)
 
-        # TODO: Make it async
-        # Notify subscribers of new operational intent
-        subscribers = opint_submission_result.dss_response.subscribers
-        if not subscribers:
-            logger.info("No subscribers found")
-            return
+    # TODO: Make it async
+    # Notify subscribers of new operational intent
+    subscribers = opint_submission_result.dss_response.subscribers
+    if not subscribers:
+        logger.info("No subscribers found")
+        return
 
-        logger.info("Notifying subscribers..")
+    logger.info("Notifying subscribers..")
 
-        for subscriber in subscribers:
-            subscriptions_raw = subscriber["subscriptions"]
-            uss_base_url = subscriber["uss_base_url"]
-            blender_base_url = env.get("BLENDER_FQDN", 0)
+    for subscriber in subscribers:
+        subscriptions_raw = subscriber["subscriptions"]
+        uss_base_url = subscriber["uss_base_url"]
+        blender_base_url = env.get("BLENDER_FQDN", 0)
 
-            if (
-                uss_base_url != blender_base_url
-            ):  # There are others who are subscribed, not just ourselves
-                subscriptions = from_dict(
-                    data_class=SubscriptionState, data=subscriptions_raw
-                )
-                op_int_details = from_dict(
-                    data_class=OperationalIntentUSSDetails,
-                    data=json.loads(fd.operational_intent),
-                )
-                operational_intent = OperationalIntentDetailsUSSResponse(
-                    reference=opint_submission_result.dss_response.operational_intent_reference,
-                    details=op_int_details,
-                )
-                post_notification_payload = NotifyPeerUSSPostPayload(
-                    operational_intent_id=created_opint,
-                    operational_intent=operational_intent,
-                    subscriptions=subscriptions,
-                )
-                # Notify Subscribers
-                my_dss_opint_creator.notify_peer_uss(
-                    uss_base_url=uss_base_url,
-                    notification_payload=post_notification_payload,
-                )
+        if (
+            uss_base_url != blender_base_url
+        ):  # There are others who are subscribed, not just ourselves
+            subscriptions = from_dict(
+                data_class=SubscriptionState, data=subscriptions_raw
+            )
+            op_int_details = from_dict(
+                data_class=OperationalIntentUSSDetails,
+                data=json.loads(fd.operational_intent),
+            )
+            operational_intent = OperationalIntentDetailsUSSResponse(
+                reference=opint_submission_result.dss_response.operational_intent_reference,
+                details=op_int_details,
+            )
+            post_notification_payload = NotifyPeerUSSPostPayload(
+                operational_intent_id=created_opint,
+                operational_intent=operational_intent,
+                subscriptions=subscriptions,
+            )
+            # Notify Subscribers
+            dss_opint_creator.notify_peer_uss(
+                uss_base_url=uss_base_url,
+                notification_payload=post_notification_payload,
+            )
