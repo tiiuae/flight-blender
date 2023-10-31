@@ -758,7 +758,7 @@ class ConformanceMonitoringWithFlights(APITestCase):
         )
         # DB record should have matching states
         fd = fdo_models.FlightDeclaration.objects.get(id=flight_declaration_id)
-        self.assertEqual(fd.state == activated_state)
+        self.assertEqual(fd.state, activated_state)
 
         # Drone submits Telemetry
 
