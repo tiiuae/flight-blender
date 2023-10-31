@@ -825,4 +825,4 @@ class ConformanceMonitoringWithFlights(APITestCase):
         self.assertEqual(flight_state_ended_response.status_code, status.HTTP_200_OK)
         # DB record should have matching states
         fd = fdo_models.FlightDeclaration.objects.get(id=flight_declaration_id)
-        self.assertEqual(fd.state == ended_state)
+        self.assertEqual(fd.state, ended_state)
