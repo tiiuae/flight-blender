@@ -319,4 +319,12 @@ class SubmittedTelemetryFlightDetails:
   recent_positions: List[RIDRecentAircraftPosition]
   operator_details: RIDFlightDetails
   
-  
+@dataclass
+class RIDOperatorDetails:
+    id: str
+    eu_classification: Optional[UAClassificationEU] = None
+    uas_id: Optional[UASID] = None
+    operator_location: Optional[OperatorLocation] = None
+    auth_data: Optional[RIDAuthData] = None
+    operator_id: Optional[str] = ''
+    operation_description: Optional[str] = ''

@@ -134,11 +134,11 @@ class FlightDeclarationStateSerializer(serializers.ModelSerializer):
         conformance_helper = FlightOperationConformanceHelper(
             flight_declaration_id=flight_declaration_id
         )
-        transition_valid = conformance_helper.verify_operation_state_transition(
+        is_transition_valid = conformance_helper.verify_operation_state_transition(
             original_state=current_state, new_state=value, event=event
         )
 
-        if not transition_valid:
+        if not is_transition_valid:
             raise serializers.ValidationError(
                 "State transition to {new_state} from current state of {current_state} is not allowed per the ASTM standards".format(
                     new_state=OPERATION_STATES[value][1],

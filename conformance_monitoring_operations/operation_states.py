@@ -1,18 +1,4 @@
-from enum import Enum
-
-
-class OperationEvent(Enum):
-    DSS_ACCEPTS = "dss_accepts"
-    OPERATOR_ACTIVATES = "operator_activates"
-    OPERATOR_CONFIRMS_ENDED = "operator_confirms_ended"
-    UA_DEPARTS_EARLY_LATE_OUTSIDE_OP_INTENT = "ua_departs_early_late_outside_op_intent"
-    UA_EXITS_COORDINATED_OP_INTENT = "ua_exits_coordinated_op_intent"
-    OPERATOR_INITIATES_CONTINGENT = "operator_initiates_contingent"
-    OPERATOR_RETURN_TO_COORDINATED_OP_INTENT = (
-        "operator_return_to_coordinated_op_intent"
-    )
-    OPERATOR_CONFIRMS_CONTINGENT = "operator_confirms_contingent"
-    TIMEOUT = "timeout"
+from common.data_definitions import OperationEvent
 
 
 class State(object):

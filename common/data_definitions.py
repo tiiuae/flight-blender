@@ -1,4 +1,21 @@
+from enum import Enum
+
 from django.utils.translation import gettext_lazy as _
+
+
+class OperationEvent(Enum):
+    DSS_ACCEPTS = "dss_accepts"
+    OPERATOR_ACTIVATES = "operator_activates"
+    OPERATOR_CONFIRMS_ENDED = "operator_confirms_ended"
+    UA_DEPARTS_EARLY_LATE_OUTSIDE_OP_INTENT = "ua_departs_early_late_outside_op_intent"
+    UA_EXITS_COORDINATED_OP_INTENT = "ua_exits_coordinated_op_intent"
+    OPERATOR_INITIATES_CONTINGENT = "operator_initiates_contingent"
+    OPERATOR_RETURN_TO_COORDINATED_OP_INTENT = (
+        "operator_return_to_coordinated_op_intent"
+    )
+    OPERATOR_CONFIRMS_CONTINGENT = "operator_confirms_contingent"
+    TIMEOUT = "timeout"
+
 
 OPERATION_STATES = (
     (0, _("Not Submitted")),
@@ -18,7 +35,7 @@ OPERATION_STATES_LOOKUP = {
     "Activated": 2,
 }
 
-#TODO: Remove this
+# TODO: Remove this
 (
     (0, _("Not Submitted")),
     (1, _("Accepted")),
@@ -38,9 +55,9 @@ OPERATION_TYPES = (
 )
 
 
-# When an operator changes a statem, he / she puts a new state (via the API), this object specifies the event when a operator takes action
+# When an operator changes a states, he / she puts a new state (via the API), this object specifies the event when a operator takes action
 OPERATOR_EVENT_LOOKUP = {
-    5: "operator_confirms_ended",
-    2: "operator_activates",
-    4: "operator_initiates_contingent",
+    5: OperationEvent.OPERATOR_CONFIRMS_ENDED,
+    2: OperationEvent.OPERATOR_ACTIVATES,
+    4: OperationEvent.OPERATOR_INITIATES_CONTINGENT,
 }

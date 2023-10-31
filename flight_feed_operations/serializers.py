@@ -11,6 +11,11 @@ class TimestampSerializer(serializers.Serializer):
     value = serializers.DateTimeField(format="%Y-%m-%dT%H:%M:%S.%fZ")
     format = serializers.CharField(required=False,default = 'RFC3339')
 
+
+class OperatorPositionSerializer(serializers.Serializer):
+    lat = serializers.FloatField(required=False,default=0.0)
+    lng = serializers.FloatField(required=False,default=0.0)
+
 class PositionSerializer(serializers.Serializer):
     lat = serializers.FloatField(required=False,default=0.0)
     lng = serializers.FloatField(required=False,default=0.0)
@@ -57,7 +62,7 @@ class UasIdSerializer(serializers.Serializer):
     specific_session_id = serializers.CharField(required=False,default=None)
 
 class OperatorLocationSerializer(serializers.Serializer):
-    position = PositionSerializer()
+    position = OperatorPositionSerializer()
     altitude = serializers.FloatField()
     altitude_type = serializers.CharField()
 

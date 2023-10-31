@@ -37,11 +37,10 @@ class FlightOperationConformanceHelper:
         """
         This class updates the state of a flight operation.
         """
-        my_operation_state_machine = FlightOperationStateMachine(state=original_state)
-        logger.info("Current Operation State %s" % my_operation_state_machine.state)
-
-        my_operation_state_machine.on_event(event)
-        new_state = get_status(my_operation_state_machine.state)
+        operation_state_machine = FlightOperationStateMachine(state=original_state)
+        logger.info("Current Operation State %s" % operation_state_machine.state)
+        operation_state_machine.on_event(event)
+        new_state = get_status(operation_state_machine.state)
         if original_state == new_state:
             ## The event cannot trigger a change of state, flight state is not updated
             logger.info("State change verification failed")
