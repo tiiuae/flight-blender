@@ -1,17 +1,22 @@
 import json
+import threading
+import time
+from dataclasses import asdict
+
 import arrow
 import pytest
-import time
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
+
+from auth_helper.common import get_redis
 from common.data_definitions import OPERATION_STATES
 from conftest import get_oauth2_token
-from rid_operations import data_definitions as rid_dd
-from dataclasses import asdict
 from flight_declaration_operations import models as fdo_models
+from rid_operations import data_definitions as rid_dd
 
 JWT = get_oauth2_token()
+REDIS_TELEMETRY_KEY = "all_observations"
 
 
 class ConformanceMonitoringWithFlights(APITestCase):
@@ -20,6 +25,8 @@ class ConformanceMonitoringWithFlights(APITestCase):
         _one_minute_from_now = now.shift(minutes=1)
         _four_minutes_from_now = now.shift(minutes=4)
 
+        self.r = get_redis()
+        self.r.xtrim(REDIS_TELEMETRY_KEY, 0)  # Reset the Telemetry stream
         self.client.defaults["HTTP_AUTHORIZATION"] = f"Bearer {JWT}"
         self.flight_declaration_api_url = reverse("set_flight_declaration")
         self.telemetry_set_url = reverse("set_telemetry")
@@ -721,47 +728,8 @@ class ConformanceMonitoringWithFlights(APITestCase):
 
     # Accepted -> Activated -> (submit telemetry) -> Ended
     # GCS = Ground Control Service.
-    def test_f1(self):
-        # GCS Submit flight plan and get the accepted state.
-        flight_declaration_response = self.client.post(
-            self.flight_declaration_api_url,
-            content_type="application/json",
-            data=json.dumps(self.flight_plan),
-        )
-        accepted_state = OPERATION_STATES[1][0]
-        self.assertEqual(
-            flight_declaration_response.json()["message"],
-            "Submitted Flight Declaration",
-        )
-        self.assertEqual(flight_declaration_response.json()["state"], accepted_state)
-        self.assertEqual(
-            flight_declaration_response.status_code, status.HTTP_201_CREATED
-        )
 
-        flight_declaration_id = flight_declaration_response.json()["id"]
-        time.sleep(10)  # SLeep 10 seconds
-
-        # GCS Activates the accepted flight request
-        activated_state = OPERATION_STATES[2][0]
-        new_state = {"state": activated_state, "submitted_by": "gcs@handler.com"}
-
-        _flight_state_api_url = reverse(
-            "flight_declaration_state", kwargs={"pk": flight_declaration_id}
-        )
-        flight_state_activated_response = self.client.put(
-            _flight_state_api_url,
-            content_type="application/json",
-            data=json.dumps(new_state),
-        )
-        self.assertEqual(
-            flight_state_activated_response.status_code, status.HTTP_200_OK
-        )
-        # DB record should have matching states
-        fd = fdo_models.FlightDeclaration.objects.get(id=flight_declaration_id)
-        self.assertEqual(fd.state, activated_state)
-
-        # Drone submits Telemetry
-
+    def _set_telemetry(self, flight_declaration_id):
         states = self.rid_json["current_states"]
         rid_flight_details = self.rid_json["flight_details"]
 
@@ -813,14 +781,156 @@ class ConformanceMonitoringWithFlights(APITestCase):
             print("Sleeping 3 seconds..")
             time.sleep(3)
 
+    def test_f1(self):
+        # GCS Submit flight plan and get the accepted state.
+        flight_declaration_response = self.client.post(
+            self.flight_declaration_api_url,
+            content_type="application/json",
+            data=json.dumps(self.flight_plan),
+        )
+        accepted_state = OPERATION_STATES[1][0]
+        self.assertEqual(
+            flight_declaration_response.json()["message"],
+            "Submitted Flight Declaration",
+        )
+        self.assertEqual(flight_declaration_response.json()["state"], accepted_state)
+        self.assertEqual(
+            flight_declaration_response.status_code, status.HTTP_201_CREATED
+        )
+
+        flight_declaration_id = flight_declaration_response.json()["id"]
+        time.sleep(10)  # SLeep 10 seconds
+
+        # GCS Activates the accepted flight request
+        activated_state = OPERATION_STATES[2][0]
+        activated_state_payload = {
+            "state": activated_state,
+            "submitted_by": "gcs@handler.com",
+        }
+
+        _flight_state_api_url = reverse(
+            "flight_declaration_state", kwargs={"pk": flight_declaration_id}
+        )
+        flight_state_activated_response = self.client.put(
+            _flight_state_api_url,
+            content_type="application/json",
+            data=json.dumps(activated_state_payload),
+        )
+        self.assertEqual(
+            flight_state_activated_response.status_code, status.HTTP_200_OK
+        )
+        # DB record should have matching states
+        fd = fdo_models.FlightDeclaration.objects.get(id=flight_declaration_id)
+        self.assertEqual(fd.state, activated_state)
+
+        # Drone submits Telemetry
+        drone_thread = threading.Thread(
+            target=self._set_telemetry, args=(flight_declaration_id,)
+        )
+        drone_thread.start()
+        time.sleep(100)
+        # A Telemetry data are added in another thread
+        telemetry_stream_count = self.r.xlen("all_observations")
+        self.assertTrue(
+            telemetry_stream_count != 0, msg="Telemetry stream length cannot be 0"
+        )
+
         # GCS Ends the activated flight request
         ended_state = OPERATION_STATES[5][0]
-        new_state = {"state": ended_state, "submitted_by": "gcs@handler.com"}
+        ended_state_payload = {"state": ended_state, "submitted_by": "gcs@handler.com"}
 
         flight_state_ended_response = self.client.put(
             _flight_state_api_url,
             content_type="application/json",
-            data=json.dumps(new_state),
+            data=json.dumps(ended_state_payload),
+        )
+        self.assertEqual(flight_state_ended_response.status_code, status.HTTP_200_OK)
+        # DB record should have matching states
+        fd = fdo_models.FlightDeclaration.objects.get(id=flight_declaration_id)
+        self.assertEqual(fd.state, ended_state)
+
+    # Accepted -> Activated -> (submit telemetry) -> Contingent -> Ended
+    # GCS = Ground Control Service.
+    def test_f2(self):
+        # GCS Submit flight plan and get the accepted state.
+        flight_declaration_response = self.client.post(
+            self.flight_declaration_api_url,
+            content_type="application/json",
+            data=json.dumps(self.flight_plan),
+        )
+        accepted_state = OPERATION_STATES[1][0]
+        self.assertEqual(
+            flight_declaration_response.json()["message"],
+            "Submitted Flight Declaration",
+        )
+        self.assertEqual(flight_declaration_response.json()["state"], accepted_state)
+        self.assertEqual(
+            flight_declaration_response.status_code, status.HTTP_201_CREATED
+        )
+
+        flight_declaration_id = flight_declaration_response.json()["id"]
+        time.sleep(10)  # SLeep 10 seconds
+
+        # GCS Activates the accepted flight request
+        activated_state = OPERATION_STATES[2][0]
+        activated_state_payload = {
+            "state": activated_state,
+            "submitted_by": "gcs@handler.com",
+        }
+
+        _flight_state_api_url = reverse(
+            "flight_declaration_state", kwargs={"pk": flight_declaration_id}
+        )
+        flight_state_activated_response = self.client.put(
+            _flight_state_api_url,
+            content_type="application/json",
+            data=json.dumps(activated_state_payload),
+        )
+        self.assertEqual(
+            flight_state_activated_response.status_code, status.HTTP_200_OK
+        )
+        # DB record should have matching states
+        fd = fdo_models.FlightDeclaration.objects.get(id=flight_declaration_id)
+        self.assertEqual(fd.state, activated_state)
+
+        # Drone submits Telemetry
+        drone_thread = threading.Thread(
+            target=self._set_telemetry, args=(flight_declaration_id,)
+        )
+        drone_thread.start()
+        time.sleep(60)
+        # A Telemetry data are added in another thread
+        telemetry_stream_count = self.r.xlen("all_observations")
+        self.assertTrue(
+            telemetry_stream_count != 0, msg="Telemetry stream length cannot be 0"
+        )
+
+        # GCS Sends Contingent to the activated flight request
+        contingent_state = OPERATION_STATES[4][0]
+        contingent_state_payload = {
+            "state": contingent_state,
+            "submitted_by": "gcs@handler.com",
+        }
+        flight_state_contingent_response = self.client.put(
+            _flight_state_api_url,
+            content_type="application/json",
+            data=json.dumps(contingent_state_payload),
+        )
+        self.assertEqual(
+            flight_state_contingent_response.status_code, status.HTTP_200_OK
+        )
+        # DB record should have matching states
+        fd = fdo_models.FlightDeclaration.objects.get(id=flight_declaration_id)
+        self.assertEqual(fd.state, contingent_state)
+
+        # GCS Ends the activated flight request
+        ended_state = OPERATION_STATES[5][0]
+        ended_state_payload = {"state": ended_state, "submitted_by": "gcs@handler.com"}
+
+        flight_state_ended_response = self.client.put(
+            _flight_state_api_url,
+            content_type="application/json",
+            data=json.dumps(ended_state_payload),
         )
         self.assertEqual(flight_state_ended_response.status_code, status.HTTP_200_OK)
         # DB record should have matching states
