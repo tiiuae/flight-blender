@@ -38,7 +38,7 @@ from .tasks import (
     submit_flight_declaration_to_dss_async,
 )
 from .utils import OperationalIntentsConverter
-
+from common.data_definitions import OPERATION_STATES
 logger = logging.getLogger("django")
 
 USSP_NETWORK_ENABLED = int(env.get("USSP_NETWORK_ENABLED", 0))
@@ -300,10 +300,11 @@ def set_flight_declaration(request: HttpRequest):
     fd.add_state_history_entry(
         new_state=0, original_state=None, notes="Created Declaration"
     )
-    if declaration_state != 0:
+    rejected_state = OPERATION_STATES[8][0]
+    if declaration_state == OPERATION_STATES:
         fd.add_state_history_entry(
             new_state=declaration_state,
-            original_state=0,
+            original_state=rejected_state,
             notes="Rejected by Flight Blender because of conflicts",
         )
     # Send flight creation notifications
@@ -400,10 +401,11 @@ def set_signed_flight_declaration(request: HttpRequest):
     fd.add_state_history_entry(
         new_state=0, original_state=None, notes="Created Declaration"
     )
-    if declaration_state != 0:
+    rejected_state = OPERATION_STATES[8][0]
+    if declaration_state == rejected_state:
         fd.add_state_history_entry(
             new_state=declaration_state,
-            original_state=0,
+            original_state=rejected_state,
             notes="Rejected by Flight Blender because of conflicts",
         )
     # Send flight creation notifications

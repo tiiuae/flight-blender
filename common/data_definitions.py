@@ -14,6 +14,7 @@ class OperationEvent(Enum):
         "operator_return_to_coordinated_op_intent"
     )
     OPERATOR_CONFIRMS_CONTINGENT = "operator_confirms_contingent"
+    BLENDER_CONFIRMS_CONTINGENT ="blender_confirms_contingent"
     TIMEOUT = "timeout"
 
 

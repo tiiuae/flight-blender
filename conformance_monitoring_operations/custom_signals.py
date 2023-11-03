@@ -8,8 +8,8 @@ from notification_operations.data_definitions import NotificationLevel
 
 from .conformance_checks_handler import FlightOperationConformanceHelper
 from .conformance_state_checks import ConformanceChecksList
-from conformance_monitoring_operations import db_operations as db_ops
-
+from common.data_definitions import OperationEvent
+from flight_declaration_operations import models as fdo_models
 logger = logging.getLogger("django")
 # Declare signals
 telemetry_non_conformance_signal = django.dispatch.Signal()
@@ -27,7 +27,6 @@ def process_telemetry_conformance_message(sender, **kwargs):
     event = False
 
     non_conformance_state_code = ConformanceChecksList.state_code(non_conformance_state)
-
     if non_conformance_state_code == "C3":
         invalid_aircraft_id_msg = "The aircraft ID provided in telemetry for operation {flight_declaration_id}, does not match the declared / authorized aircraft, you must stop operation. C4 Check failed.".format(
             flight_declaration_id=flight_declaration_id
@@ -41,7 +40,7 @@ def process_telemetry_conformance_message(sender, **kwargs):
         )
 
         new_state = 4
-        event = "blender_confirms_contingent"
+        event = OperationEvent.BLENDER_CONFIRMS_CONTINGENT
 
     elif non_conformance_state_code in ["C4", "C5"]:
         flight_state_not_correct_msg = "The Operation state for operation {flight_declaration_id}, is not one of 'Accepted' or 'Activated', your authorization is invalid. C4+C5 Check failed.".format(
@@ -54,7 +53,7 @@ def process_telemetry_conformance_message(sender, **kwargs):
             level=NotificationLevel.ERROR.value,
             log_message="Non conformance message in Telemetry",
         )
-        event = "blender_confirms_contingent"
+        event = OperationEvent.BLENDER_CONFIRMS_CONTINGENT
         new_state = 3
 
     elif non_conformance_state_code == "C6":
@@ -69,7 +68,7 @@ def process_telemetry_conformance_message(sender, **kwargs):
             log_message="Non conformance message in Telemetry",
         )
         new_state = 3
-        event = "ua_departs_early_late"
+        event = OperationEvent.UA_DEPARTS_EARLY_LATE_OUTSIDE_OP_INTENT
 
     elif non_conformance_state_code == "C7a":
         aircraft_altitude_nonconformant_msg = "The telemetry timestamp provided for operation {flight_declaration_id}, is not within the altitude bounds C7a check failed.".format(
@@ -83,7 +82,7 @@ def process_telemetry_conformance_message(sender, **kwargs):
             log_message="Non conformance message in Telemetry",
         )
         new_state = 3
-        event = "ua_exits_coordinated_op_intent"
+        event = OperationEvent.UA_EXITS_COORDINATED_OP_INTENT
 
     elif non_conformance_state_code == "C7b":
         aircraft_bounds_nonconformant_msg = "The telemetry location provided for operation {flight_declaration_id}, is not within the declared bounds for an operation. C7b check failed.".format(
@@ -97,11 +96,11 @@ def process_telemetry_conformance_message(sender, **kwargs):
             log_message="Non conformance message in Telemetry",
         )
         new_state = 3
-        event = "ua_exits_coordinated_op_intent"
+        event = OperationEvent.UA_EXITS_COORDINATED_OP_INTENT
 
     # The operation is non-conforming, need to update the operational intent in the dss and notify peer USSP
     if event:
-        fd = db_ops.get_flight_declaration_by_id(id=flight_declaration_id)
+        fd = fdo_models.FlightDeclaration.objects.get(id=flight_declaration_id)
         original_state = fd.state
         fd.add_state_history_entry(
             original_state=original_state,
@@ -124,7 +123,6 @@ def process_flight_authorization_non_conformance_message(sender, **kwargs):
     """
     non_conformance_state = kwargs["non_conformance_state"]
     flight_declaration_id = kwargs["flight_declaration_id"]
-
     non_conformance_state_code = ConformanceChecksList.state_code(non_conformance_state)
     event = None
     if non_conformance_state_code == "C9a":
@@ -137,7 +135,7 @@ def process_flight_authorization_non_conformance_message(sender, **kwargs):
             level=NotificationLevel.ERROR.value,
             log_message="Non conformance message in Flight Authorization",
         )
-        event = "timeout"
+        event = OperationEvent.TIMEOUT
         new_state = 4
 
     elif non_conformance_state_code == "C9b":
@@ -152,7 +150,7 @@ def process_flight_authorization_non_conformance_message(sender, **kwargs):
             log_message="Non conformance message in Flight Authorization",
         )
 
-        event = "blender_confirms_contingent"
+        event = OperationEvent.BLENDER_CONFIRMS_CONTINGENT
         new_state = 4
     elif non_conformance_state_code == "C10":
         # notify the operator that the state of operation is not properly set.
@@ -166,7 +164,7 @@ def process_flight_authorization_non_conformance_message(sender, **kwargs):
             level=NotificationLevel.ERROR.value,
             log_message="Non conformance message in Flight Authorization",
         )
-        event = "blender_confirms_contingent"
+        event = OperationEvent.BLENDER_CONFIRMS_CONTINGENT
         new_state = 4
     elif non_conformance_state_code == "C11":
         authorization_not_granted_message = "There is no flight authorization for operation with ID {flight_declaration_id}. Check C11 Failed".format(
@@ -181,10 +179,10 @@ def process_flight_authorization_non_conformance_message(sender, **kwargs):
             level=NotificationLevel.ERROR.value,
             log_message="Non conformance message in Flight Authorization",
         )
-        event = "blender_confirms_contingent"
+        event = OperationEvent.BLENDER_CONFIRMS_CONTINGENT
     # The operation is non-conforming, need to update the operational intent in the dss and notify peer USSP
     if event:
-        fd = db_ops.get_flight_declaration_by_id(id=flight_declaration_id)
+        fd = fdo_models.FlightDeclaration.objects.get(id=flight_declaration_id)
         original_state = fd.state
         fd.add_state_history_entry(
             original_state=original_state,

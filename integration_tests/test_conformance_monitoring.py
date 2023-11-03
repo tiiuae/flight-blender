@@ -11,6 +11,8 @@ from rest_framework.test import APITestCase
 
 from auth_helper.common import get_redis
 from common.data_definitions import OPERATION_STATES
+from conformance_monitoring_operations import models as cfm_models
+from conformance_monitoring_operations import tasks as conforming_tasks
 from conftest import get_oauth2_token
 from flight_declaration_operations import models as fdo_models
 from rid_operations import data_definitions as rid_dd
@@ -24,7 +26,6 @@ class ConformanceMonitoringWithFlights(APITestCase):
         now = arrow.now()
         _one_minute_from_now = now.shift(minutes=1)
         _four_minutes_from_now = now.shift(minutes=4)
-
         self.r = get_redis()
         self.r.xtrim(REDIS_TELEMETRY_KEY, 0)  # Reset the Telemetry stream
         self.client.defaults["HTTP_AUTHORIZATION"] = f"Bearer {JWT}"
@@ -726,12 +727,9 @@ class ConformanceMonitoringWithFlights(APITestCase):
             },
         }
 
-    # Accepted -> Activated -> (submit telemetry) -> Ended
-    # GCS = Ground Control Service.
-
-    def _set_telemetry(self, flight_declaration_id):
-        states = self.rid_json["current_states"]
-        rid_flight_details = self.rid_json["flight_details"]
+    def _set_telemetry(self, flight_declaration_id, rid_json):
+        states = rid_json["current_states"]
+        rid_flight_details = rid_json["flight_details"]
 
         eu_classification = rid_flight_details["rid_details"]["eu_classification"]
         uas_id = rid_flight_details["rid_details"]["uas_id"]
@@ -781,6 +779,8 @@ class ConformanceMonitoringWithFlights(APITestCase):
             print("Sleeping 3 seconds..")
             time.sleep(3)
 
+    # Accepted -> Activated -> (submit telemetry) -> Ended.  !No conformance monitoring is triggered
+    # GCS = Ground Control Service.
     def test_f1(self):
         # GCS Submit flight plan and get the accepted state.
         flight_declaration_response = self.client.post(
@@ -823,13 +823,12 @@ class ConformanceMonitoringWithFlights(APITestCase):
         fd = fdo_models.FlightDeclaration.objects.get(id=flight_declaration_id)
         self.assertEqual(fd.state, activated_state)
 
-        # Drone submits Telemetry
+        # Drone submits Telemetry in another thread
         drone_thread = threading.Thread(
-            target=self._set_telemetry, args=(flight_declaration_id,)
+            target=self._set_telemetry, args=(flight_declaration_id, self.rid_json)
         )
         drone_thread.start()
         time.sleep(100)
-        # A Telemetry data are added in another thread
         telemetry_stream_count = self.r.xlen("all_observations")
         self.assertTrue(
             telemetry_stream_count != 0, msg="Telemetry stream length cannot be 0"
@@ -849,7 +848,7 @@ class ConformanceMonitoringWithFlights(APITestCase):
         fd = fdo_models.FlightDeclaration.objects.get(id=flight_declaration_id)
         self.assertEqual(fd.state, ended_state)
 
-    # Accepted -> Activated -> (submit telemetry) -> Contingent -> Ended
+    # Accepted -> Activated -> (submit telemetry) -> Contingent -> Ended. !No conformance monitoring is triggered
     # GCS = Ground Control Service.
     def test_f2(self):
         # GCS Submit flight plan and get the accepted state.
@@ -893,13 +892,12 @@ class ConformanceMonitoringWithFlights(APITestCase):
         fd = fdo_models.FlightDeclaration.objects.get(id=flight_declaration_id)
         self.assertEqual(fd.state, activated_state)
 
-        # Drone submits Telemetry
+        # Drone submits Telemetry in another thread
         drone_thread = threading.Thread(
-            target=self._set_telemetry, args=(flight_declaration_id,)
+            target=self._set_telemetry, args=(flight_declaration_id, self.rid_json)
         )
         drone_thread.start()
         time.sleep(60)
-        # A Telemetry data are added in another thread
         telemetry_stream_count = self.r.xlen("all_observations")
         self.assertTrue(
             telemetry_stream_count != 0, msg="Telemetry stream length cannot be 0"
@@ -936,3 +934,100 @@ class ConformanceMonitoringWithFlights(APITestCase):
         # DB record should have matching states
         fd = fdo_models.FlightDeclaration.objects.get(id=flight_declaration_id)
         self.assertEqual(fd.state, ended_state)
+
+    # Accepted -> Activated -> (submit telemetry)-> Ended Conformance monitoring is enabled
+    # GCS = Ground Control Service.
+    def test_f3(self):
+        # GCS Submit flight plan and get the accepted state.
+        flight_declaration_response = self.client.post(
+            self.flight_declaration_api_url,
+            content_type="application/json",
+            data=json.dumps(self.flight_plan),
+        )
+        accepted_state = OPERATION_STATES[1][0]
+        self.assertEqual(
+            flight_declaration_response.json()["message"],
+            "Submitted Flight Declaration",
+        )
+        self.assertEqual(flight_declaration_response.json()["state"], accepted_state)
+        self.assertEqual(
+            flight_declaration_response.status_code, status.HTTP_201_CREATED
+        )
+
+        flight_declaration_id = flight_declaration_response.json()["id"]
+        time.sleep(10)  # Sleep 10 seconds
+
+        # GCS Activates the accepted flight request
+        activated_state = OPERATION_STATES[2][0]
+        activated_state_payload = {
+            "state": activated_state,
+            "submitted_by": "gcs@handler.com",
+        }
+
+        _flight_state_api_url = reverse(
+            "flight_declaration_state", kwargs={"pk": flight_declaration_id}
+        )
+        flight_state_activated_response = self.client.put(
+            _flight_state_api_url,
+            content_type="application/json",
+            data=json.dumps(activated_state_payload),
+        )
+        self.assertEqual(
+            flight_state_activated_response.status_code, status.HTTP_200_OK
+        )
+        # Flight state in DB is in accepted state
+        fd = fdo_models.FlightDeclaration.objects.get(id=flight_declaration_id)
+        self.assertEqual(fd.state, activated_state)
+        # Flight authorization DB record is created
+        fa = fdo_models.FlightAuthorization.objects.filter(declaration=fd).first()
+        self.assertIsNotNone(fa)
+
+        # Drone submits Telemetry in another thread
+        drone_thread = threading.Thread(
+            target=self._set_telemetry, args=(flight_declaration_id, self.rid_json)
+        )
+        drone_thread.start()
+        time.sleep(30)
+
+        telemetry_stream_count = self.r.xlen("all_observations")
+        self.assertTrue(
+            telemetry_stream_count != 0, msg="Telemetry stream length cannot be 0"
+        )
+        # IMPORTANT: Celery task : check_flight_conformance() will not trigger automatically in the test framework. Hence triggering it manually.
+        # Mock Latest Telemetry DateTime since the TaskScheduler is not running in unit test
+        fd.latest_telemetry_datetime = arrow.now().isoformat()
+        fd.save()
+        conforming_tasks.check_flight_conformance(
+            flight_declaration_id=flight_declaration_id
+        )
+
+        # The scheduler task for the active flight should be created in DB
+        task = cfm_models.TaskScheduler.objects.get(
+            flight_declaration_id=flight_declaration_id
+        )
+        self.assertIsNotNone(task)
+
+        # GCS Ends the activated flight request
+        ended_state = OPERATION_STATES[5][0]
+        ended_state_payload = {"state": ended_state, "submitted_by": "gcs@handler.com"}
+
+        flight_state_ended_response = self.client.put(
+            _flight_state_api_url,
+            content_type="application/json",
+            data=json.dumps(ended_state_payload),
+        )
+        self.assertEqual(flight_state_ended_response.status_code, status.HTTP_200_OK)
+        # DB record should have matching states
+
+        fd = fdo_models.FlightDeclaration.objects.get(id=flight_declaration_id)
+        self.assertEqual(fd.state, ended_state)
+
+        # Corresponding flight track records should also be created in the DB
+        flight_trackings = fdo_models.FlightOperationTracking.objects.filter(
+            flight_declaration_id=flight_declaration_id
+        )
+
+        self.assertEqual(len(flight_trackings), 3)
+        self.assertEqual(flight_trackings[0].notes, "Created Declaration")
+        self.assertEqual(flight_trackings[1].notes, "State changed by operator")
+        self.assertEqual(flight_trackings[2].notes, "State changed by operator")

@@ -45,6 +45,7 @@ class FlightDeclaration(models.Model):
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    latest_telemetry_datetime = models.DateTimeField(null=True)
 
     class Meta:
         ordering = ["-created_at"]
