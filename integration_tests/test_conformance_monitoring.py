@@ -982,6 +982,12 @@ class ConformanceMonitoringWithFlights(APITestCase):
         fa = fdo_models.FlightAuthorization.objects.filter(declaration=fd).first()
         self.assertIsNotNone(fa)
 
+        # The scheduler task for the accepted->activated state flight should be created in DB
+        task = cfm_models.TaskScheduler.objects.get(
+            flight_declaration_id=flight_declaration_id
+        )
+        self.assertIsNotNone(task)
+
         # Drone submits Telemetry in another thread
         drone_thread = threading.Thread(
             target=self._set_telemetry, args=(flight_declaration_id, self.rid_json)
@@ -1000,12 +1006,6 @@ class ConformanceMonitoringWithFlights(APITestCase):
         conforming_tasks.check_flight_conformance(
             flight_declaration_id=flight_declaration_id
         )
-
-        # The scheduler task for the active flight should be created in DB
-        task = cfm_models.TaskScheduler.objects.get(
-            flight_declaration_id=flight_declaration_id
-        )
-        self.assertIsNotNone(task)
 
         # GCS Ends the activated flight request
         ended_state = OPERATION_STATES[5][0]
