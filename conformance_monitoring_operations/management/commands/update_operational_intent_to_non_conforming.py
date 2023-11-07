@@ -49,6 +49,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         # This command declares an operation as non-conforming and updates the state to the DSS (and notifies subscribers)
         my_database_reader = BlenderDatabaseReader()
+        dry_run = options["dry_run"]
         dry_run = 1 if dry_run == "1" else 0
         # Set new state as non-conforming
         new_state = OPERATION_STATES[3][1]

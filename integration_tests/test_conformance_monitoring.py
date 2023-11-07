@@ -1031,3 +1031,85 @@ class ConformanceMonitoringWithFlights(APITestCase):
         self.assertEqual(flight_trackings[0].notes, "Created Declaration")
         self.assertEqual(flight_trackings[1].notes, "State changed by operator")
         self.assertEqual(flight_trackings[2].notes, "State changed by operator")
+
+
+    # Accepted -> Activated -> Conformance monitoring is enabled
+    # GCS = Ground Control Service.
+    def test_f4_no_telemetry(self):
+        # GCS Submit flight plan and get the accepted state.
+        flight_declaration_response = self.client.post(
+            self.flight_declaration_api_url,
+            content_type="application/json",
+            data=json.dumps(self.flight_plan),
+        )
+        accepted_state = OPERATION_STATES[1][0]
+        self.assertEqual(
+            flight_declaration_response.json()["message"],
+            "Submitted Flight Declaration",
+        )
+        self.assertEqual(flight_declaration_response.json()["state"], accepted_state)
+        self.assertEqual(
+            flight_declaration_response.status_code, status.HTTP_201_CREATED
+        )
+
+        flight_declaration_id = flight_declaration_response.json()["id"]
+        time.sleep(10)  # Sleep 10 seconds
+
+        # GCS Activates the accepted flight request
+        activated_state = OPERATION_STATES[2][0]
+        activated_state_payload = {
+            "state": activated_state,
+            "submitted_by": "gcs@handler.com",
+        }
+
+        _flight_state_api_url = reverse(
+            "flight_declaration_state", kwargs={"pk": flight_declaration_id}
+        )
+        flight_state_activated_response = self.client.put(
+            _flight_state_api_url,
+            content_type="application/json",
+            data=json.dumps(activated_state_payload),
+        )
+        self.assertEqual(
+            flight_state_activated_response.status_code, status.HTTP_200_OK
+        )
+        # Flight state in DB is in accepted state
+        fd = fdo_models.FlightDeclaration.objects.get(id=flight_declaration_id)
+        self.assertEqual(fd.state, activated_state)
+        # Flight authorization DB record is created
+        fa = fdo_models.FlightAuthorization.objects.filter(declaration=fd).first()
+        self.assertIsNotNone(fa)
+
+        # The scheduler task for the accepted->activated state flight should be created in DB
+        task = cfm_models.TaskScheduler.objects.get(
+            flight_declaration_id=flight_declaration_id
+        )
+        self.assertIsNotNone(task)
+
+        time.sleep(15)
+
+        telemetry_stream_count = self.r.xlen("all_observations")
+        self.assertTrue(
+            telemetry_stream_count == 0, msg="Telemetry stream length should be 0"
+        )
+        # IMPORTANT: Celery task : check_flight_conformance() will not trigger automatically in the test framework. Hence triggering it manually.
+        # Mock Latest Telemetry DateTime since the TaskScheduler is not running in unit test
+        fd.latest_telemetry_datetime = arrow.now().isoformat()
+        fd.save()
+        conforming_tasks.check_flight_conformance(
+            flight_declaration_id=flight_declaration_id
+        )
+
+
+        # Corresponding flight track records should also be created in the DB
+        flight_trackings = fdo_models.FlightOperationTracking.objects.filter(
+            flight_declaration_id=flight_declaration_id
+        )
+        print("Tracking...")
+        for x in flight_trackings:
+            print(x.notes)
+
+        # self.assertEqual(len(flight_trackings), 3)
+        # self.assertEqual(flight_trackings[0].notes, "Created Declaration")
+        # self.assertEqual(flight_trackings[1].notes, "State changed by operator")
+        # self.assertEqual(flight_trackings[2].notes, "State changed by operator")
