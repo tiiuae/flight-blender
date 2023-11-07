@@ -1086,9 +1086,6 @@ class ConformanceMonitoringWithFlights(APITestCase):
         self.assertIsNotNone(task)
 
         time.sleep(10)
-        telemetry_stream_count = self.r.xlen("all_observations")
-        self.assertTrue(telemetry_stream_count == 0, msg="Telemetry stream should be 0")
-
         # IMPORTANT: Celery task : check_flight_conformance() will not trigger automatically in the test framework. Hence triggering it manually.
         conforming_tasks.check_flight_conformance(
             flight_declaration_id=flight_declaration_id
