@@ -15,6 +15,7 @@ from .conformance_state_checks import ConformanceChecksList
 from .data_helper import cast_to_volume4d
 from conformance_monitoring_operations import db_operations as db_ops
 from flight_declaration_operations import models as fdo_models
+from common.data_definitions import OPERATION_STATES
 
 load_dotenv(find_dotenv())
 
@@ -65,7 +66,10 @@ class BlenderConformanceEngine:
 
         # C4, C5 check
         try:
-            assert flight_declaration.state in [1, 2]
+            assert flight_declaration.state in [
+                OPERATION_STATES[1][0],
+                OPERATION_STATES[2][0],
+            ]
         except AssertionError:
             return ConformanceChecksList.C5
 
@@ -162,13 +166,17 @@ class BlenderConformanceEngine:
         fifteen_seconds_after_now = now.shift(seconds=15)
         # C10 state check
         # allowed_states = ['Activated', 'Nonconforming', 'Contingent']
-        allowed_states = [2, 3, 4]
+        allowed_states = [
+            OPERATION_STATES[2][0],
+            OPERATION_STATES[3][0],
+            OPERATION_STATES[4][0],
+        ]
         if fd.state not in allowed_states:
             # set state as ended
             return ConformanceChecksList.C10
 
         # C9 state check
-        # Operation is supposed to start check if telemetry is being submitted (within the last minute)
+        # Operation is supposed to start check if telemetry is being submitted (within the last 15 seconds)
         if latest_telemetry_datetime:
             if (
                 not fifteen_seconds_before_now
