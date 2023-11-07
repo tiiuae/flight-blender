@@ -30,17 +30,8 @@ def check_flight_conformance(flight_declaration_id: str, dry_run: str = "1"):
             flight_declaration_id=flight_declaration_id
         )
     )
-    if flight_authorization_conformant is True:
-        logger.info(
-            "Operation with {flight_operation_id} is conformant...".format(
-                flight_operation_id=flight_declaration_id
-            )
-        )
-        # Basic conformance checks passed, check telemetry conformance
-        _check_operation_telemetry_conformance(
-            flight_declaration_id=flight_declaration_id, dry_run=d_run
-        )
-    else:
+
+    if flight_authorization_conformant is not True:
         custom_signals.flight_authorization_non_conformance_signal.send(
             sender="check_flight_conformance",
             non_conformance_state=flight_authorization_conformant,
@@ -52,6 +43,17 @@ def check_flight_conformance(flight_declaration_id: str, dry_run: str = "1"):
                 flight_operation_id=flight_declaration_id
             )
         )
+        return
+    
+    logger.info(
+        "Operation with {flight_operation_id} is conformant...".format(
+            flight_operation_id=flight_declaration_id
+        )
+    )
+    # Basic conformance checks passed, check telemetry conformance
+    _check_operation_telemetry_conformance(
+        flight_declaration_id=flight_declaration_id, dry_run=d_run
+    )
 
 
 # This method conducts flight telemetry checks

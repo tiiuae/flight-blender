@@ -1032,7 +1032,6 @@ class ConformanceMonitoringWithFlights(APITestCase):
         self.assertEqual(flight_trackings[1].notes, "State changed by operator")
         self.assertEqual(flight_trackings[2].notes, "State changed by operator")
 
-
     # Accepted -> Activated -> Conformance monitoring is enabled
     # GCS = Ground Control Service.
     def test_f4_no_telemetry(self):
@@ -1086,30 +1085,23 @@ class ConformanceMonitoringWithFlights(APITestCase):
         )
         self.assertIsNotNone(task)
 
-        time.sleep(15)
-
+        time.sleep(10)
         telemetry_stream_count = self.r.xlen("all_observations")
-        self.assertTrue(
-            telemetry_stream_count == 0, msg="Telemetry stream length should be 0"
-        )
+        self.assertTrue(telemetry_stream_count == 0, msg="Telemetry stream should be 0")
+
         # IMPORTANT: Celery task : check_flight_conformance() will not trigger automatically in the test framework. Hence triggering it manually.
-        # Mock Latest Telemetry DateTime since the TaskScheduler is not running in unit test
-        fd.latest_telemetry_datetime = arrow.now().isoformat()
-        fd.save()
         conforming_tasks.check_flight_conformance(
             flight_declaration_id=flight_declaration_id
         )
-
 
         # Corresponding flight track records should also be created in the DB
         flight_trackings = fdo_models.FlightOperationTracking.objects.filter(
             flight_declaration_id=flight_declaration_id
         )
-        print("Tracking...")
-        for x in flight_trackings:
-            print(x.notes)
-
-        # self.assertEqual(len(flight_trackings), 3)
-        # self.assertEqual(flight_trackings[0].notes, "Created Declaration")
-        # self.assertEqual(flight_trackings[1].notes, "State changed by operator")
-        # self.assertEqual(flight_trackings[2].notes, "State changed by operator")
+        self.assertEqual(len(flight_trackings), 3)
+        self.assertEqual(flight_trackings[0].notes, "Created Declaration")
+        self.assertEqual(flight_trackings[1].notes, "State changed by operator")
+        self.assertEqual(
+            flight_trackings[2].notes,
+            "State changed by flight authorization checks because of telemetry non-conformance: C9b",
+        )
