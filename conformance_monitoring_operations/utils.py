@@ -1,6 +1,5 @@
 ## This file checks the conformance of a operation per the AMC stated in the EU Conformance monitoring service
 import json
-import logging
 from typing import List
 
 import arrow
@@ -9,7 +8,7 @@ from shapely.geometry import Point
 from shapely.geometry import Polygon as Plgn
 
 from conformance_monitoring_operations.data_definitions import PolygonAltitude
-from scd_operations.data_definitions import LatLngPoint, Polygon, Volume4D
+from scd_operations.data_definitions import LatLngPoint
 
 from .conformance_state_checks import ConformanceChecksList
 from .data_helper import cast_to_volume4d
