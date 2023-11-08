@@ -64,15 +64,27 @@ class BlenderConformanceEngine:
         except AssertionError:
             return ConformanceChecksList.C3
 
-        # C4, C5 check
+        # Check flight is not processing, ended, withdrawn, cancelled, rejected
         try:
+            assert flight_declaration.state not in [
+                OPERATION_STATES[0][0],
+                OPERATION_STATES[5][0],
+                OPERATION_STATES[6][0],
+                OPERATION_STATES[7][0],
+                OPERATION_STATES[8][0]
+            ]
+        except AssertionError:
+            return ConformanceChecksList.C4
+        try:
+            # Check flight is activated, nonconforming contingent
             assert flight_declaration.state in [
-                OPERATION_STATES[1][0],
                 OPERATION_STATES[2][0],
+                OPERATION_STATES[3][0],
+                OPERATION_STATES[4][0]
             ]
         except AssertionError:
             return ConformanceChecksList.C5
-
+        
         # C6 check
         try:
             assert is_time_between(
