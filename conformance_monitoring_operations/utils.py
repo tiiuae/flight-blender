@@ -1,20 +1,20 @@
 ## This file checks the conformance of a operation per the AMC stated in the EU Conformance monitoring service
 import json
-import logging
 from typing import List
 
 import arrow
-from common.database_operations import BlenderDatabaseReader
 from dotenv import find_dotenv, load_dotenv
 from shapely.geometry import Point
 from shapely.geometry import Polygon as Plgn
 
 from conformance_monitoring_operations.data_definitions import PolygonAltitude
-from scd_operations.scd_data_definitions import LatLngPoint, Polygon, Volume4D
+from scd_operations.data_definitions import LatLngPoint
 
-from .conformance_state_helper import ConformanceChecksList
+from .conformance_state_checks import ConformanceChecksList
 from .data_helper import cast_to_volume4d
-
+from conformance_monitoring_operations import db_operations as db_ops
+from flight_declaration_operations import models as fdo_models
+from common.data_definitions import OPERATION_STATES
 
 load_dotenv(find_dotenv())
 
@@ -48,12 +48,9 @@ class BlenderConformanceEngine:
          - C8 Check if it is near a GeoFence and / breaches one
 
         """
-        my_database_reader = BlenderDatabaseReader()
         now = arrow.now()
 
-        flight_declaration = my_database_reader.get_flight_declaration_by_id(
-            flight_declaration_id=flight_declaration_id
-        )
+        flight_declaration = db_ops.get_flight_declaration_by_id(id=flight_declaration_id)
 
         # Flight Operation and Flight Authorization exists, create a notifications helper
 
@@ -66,12 +63,27 @@ class BlenderConformanceEngine:
         except AssertionError:
             return ConformanceChecksList.C3
 
-        # C4, C5 check
+        # Check flight is not processing, ended, withdrawn, cancelled, rejected
         try:
-            assert flight_declaration.state in [1, 2]
+            assert flight_declaration.state not in [
+                OPERATION_STATES[0][0],
+                OPERATION_STATES[5][0],
+                OPERATION_STATES[6][0],
+                OPERATION_STATES[7][0],
+                OPERATION_STATES[8][0]
+            ]
+        except AssertionError:
+            return ConformanceChecksList.C4
+        try:
+            # Check flight is activated, nonconforming contingent
+            assert flight_declaration.state in [
+                OPERATION_STATES[2][0],
+                OPERATION_STATES[3][0],
+                OPERATION_STATES[4][0]
+            ]
         except AssertionError:
             return ConformanceChecksList.C5
-
+        
         # C6 check
         try:
             assert is_time_between(
@@ -149,45 +161,42 @@ class BlenderConformanceEngine:
         C11 Check if a Flight authorization object exists
         """
         # Flight Operation and Flight Authorization exists, create a notifications helper
-
-        my_database_reader = BlenderDatabaseReader()
         now = arrow.now()
-        flight_declaration = my_database_reader.get_flight_declaration_by_id(
-            flight_declaration_id=flight_declaration_id
-        )
-        flight_authorization_exists = (
-            my_database_reader.get_flight_authorization_by_flight_declaration(
-                flight_declaration_id=flight_declaration_id
-            )
-        )
-        # C11 Check
-        if not flight_authorization_exists:
+        fd = fdo_models.FlightDeclaration.objects.get(id=flight_declaration_id)
+        try:
+           fdo_models.FlightAuthorization.objects.get(declaration=fd)
+        except fdo_models.FlightAuthorization.DoesNotExist:
             # if flight state is accepted, then change it to ended and delete from dss
             return ConformanceChecksList.C11
+        
+
         # The time the most recent telemetry was sent
-        latest_telemetry_datetime = flight_declaration.latest_telemetry_datetime
+        latest_telemetry_datetime = fd.latest_telemetry_datetime
         # Check the current time is within the start / end date time +/- 15 seconds TODO: trim this window as it is to broad
         fifteen_seconds_before_now = now.shift(seconds=-15)
         fifteen_seconds_after_now = now.shift(seconds=15)
         # C10 state check
         # allowed_states = ['Activated', 'Nonconforming', 'Contingent']
-        allowed_states = [2, 3, 4]
-        if flight_declaration.state not in allowed_states:
+        allowed_states = [
+            OPERATION_STATES[2][0],
+            OPERATION_STATES[3][0],
+            OPERATION_STATES[4][0],
+        ]
+        if fd.state not in allowed_states:
             # set state as ended
             return ConformanceChecksList.C10
 
         # C9 state check
-        # Operation is supposed to start check if telemetry is being submitted (within the last minute)
+        # Operation is supposed to start check if telemetry is being submitted (within the last 15 seconds)
         if latest_telemetry_datetime:
             if (
                 not fifteen_seconds_before_now
                 <= latest_telemetry_datetime
                 <= fifteen_seconds_after_now
             ):
+                
                 return ConformanceChecksList.C9a
         else:
             # declare state as contingent
-
             return ConformanceChecksList.C9b
-
         return True

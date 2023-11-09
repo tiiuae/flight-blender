@@ -9,11 +9,12 @@ from dotenv import find_dotenv, load_dotenv
 
 from auth_helper.common import get_redis
 from scd_operations.dss_scd_helper import SCDOperations
-from scd_operations.scd_data_definitions import (
+from scd_operations.data_definitions import (
     ImplicitSubscriptionParameters,
     OperationalIntentReferenceDSSResponse,
     Time,
 )
+from conformance_monitoring_operations import db_operations as db_ops
 
 load_dotenv(find_dotenv())
 ENV_FILE = find_dotenv()
@@ -60,9 +61,7 @@ class Command(BaseCommand):
 
         my_database_reader = BlenderDatabaseReader()
 
-        flight_declaration = my_database_reader.get_flight_declaration_by_id(
-            flight_declaration_id=flight_declaration_id
-        )
+        flight_declaration = db_ops.get_flight_declaration_by_id(id=flight_declaration_id)
         if not flight_declaration:
             raise CommandError(
                 "Flight Declaration with ID {flight_declaration_id} does not exist".format(

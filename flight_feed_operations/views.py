@@ -17,7 +17,7 @@ from rid_operations.data_definitions import (
     RIDFlightDetails,
     SignedUnSignedTelemetryObservations,
 )
-from rid_operations.tasks import stream_rid_data_v22
+from rid_operations.tasks import stream_rid_telemetry_data
 
 from . import flight_stream_helper
 from .data_definitions import (
@@ -388,7 +388,7 @@ def set_signed_telemetry(request):
                 asdict(single_observation_set, dict_factory=NestedDict)
             )
 
-            stream_rid_data_v22.delay(
+            stream_rid_telemetry_data.delay(
                 rid_telemetry_observations=json.dumps(unsigned_telemetry_observations)
             )
         submission_success = {"message": "Telemetry data successfully submitted"}
@@ -477,7 +477,7 @@ def set_telemetry(request: HttpRequest):
         unsigned_telemetry_observations_str = json.dumps(
             unsigned_telemetry_observations
         )
-        stream_rid_data_v22.delay(
+        stream_rid_telemetry_data.delay(
             rid_telemetry_observations=unsigned_telemetry_observations_str
         )
     submission_success = {"message": "Telemetry data successfully submitted"}

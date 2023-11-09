@@ -8,7 +8,7 @@ from dotenv import find_dotenv, load_dotenv
 
 from auth_helper.common import get_redis
 from scd_operations.dss_scd_helper import SCDOperations
-
+from conformance_monitoring_operations import db_operations as db_ops
 load_dotenv(find_dotenv())
 
 ENV_FILE = find_dotenv()
@@ -54,20 +54,15 @@ class Command(BaseCommand):
                 "Incomplete command, Flight Declaration ID not provided %s" % e
             )
 
-        flight_declaration = my_database_reader.get_flight_declaration_by_id(
-            flight_declaration_id=flight_declaration_id
-        )
+        flight_declaration = db_ops.get_flight_declaration_by_id(id=flight_declaration_id)
         if not flight_declaration:
             raise CommandError(
                 "Flight Declaration with ID {flight_declaration_id} does not exist".format(
                     flight_declaration_id=flight_declaration_id
                 )
             )
-        flight_authorization = (
-            my_database_reader.get_flight_authorization_by_flight_declaration_obj(
-                flight_declaration=flight_declaration
-            )
-        )
+        flight_authorization =  db_ops.get_flight_authorization_by_flight_declaration(flight_declaration=flight_declaration)
+
         dss_operational_intent_ref_id = flight_authorization.dss_operational_intent_id
 
         r = get_redis()
@@ -93,9 +88,7 @@ class Command(BaseCommand):
             my_database_reader = BlenderDatabaseReader()
             now = arrow.now().isoformat()
 
-            flight_declaration = my_database_reader.get_flight_declaration_by_id(
-                flight_declaration_id=flight_declaration_id
-            )
+            flight_declaration = db_ops.get_flight_declaration_by_id(id=flight_declaration_id)
             if not flight_declaration:
                 raise CommandError(
                     "Flight Declaration with ID {flight_declaration_id} does not exist".format(

@@ -6,7 +6,7 @@ from auth_helper.utils import requires_scopes
 from rest_framework.response import Response
 from dataclasses import asdict, is_dataclass
 from datetime import timedelta
-from .scd_data_definitions import SCDTestInjectionDataPayload, FlightAuthorizationDataPayload, TestInjectionResult,SCDTestStatusResponse, CapabilitiesResponse, DeleteFlightResponse,LatLngPoint, Polygon, Circle, Altitude, Volume3D, Time, Radius, Volume4D, OperationalIntentTestInjection, OperationalIntentStorage,  ClearAreaResponse, SuccessfulOperationalIntentFlightIDStorage
+from .data_definitions import SCDTestInjectionDataPayload, FlightAuthorizationDataPayload, TestInjectionResult,SCDTestStatusResponse, CapabilitiesResponse, DeleteFlightResponse,LatLngPoint, Polygon, Circle, Altitude, Volume3D, Time, Radius, Volume4D, OperationalIntentTestInjection, OperationalIntentStorage,  ClearAreaResponse, SuccessfulOperationalIntentFlightIDStorage
 from . import dss_scd_helper
 from rid_operations import rtree_helper
 from .utils import UAVSerialNumberValidator, OperatorRegistrationNumberValidator

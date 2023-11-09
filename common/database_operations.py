@@ -1,23 +1,21 @@
 from flight_declaration_operations.models import (
-    FlightAuthorization,
     FlightDeclaration,
 )
-from geo_fence_operations.models import GeoFence
 from conformance_monitoring_operations.models import TaskScheduler
 from typing import Tuple, List
 from uuid import uuid4
 import arrow
 from django.db.utils import IntegrityError
-from django_celery_beat.models import PeriodicTask, IntervalSchedule
-from scd_operations.data_definitions import FlightDeclarationCreationPayload
+# from scd_operations.data_definitions import FlightDeclarationCreationPayload
 import os
 import json
 from dataclasses import asdict
 import logging
-from scd_operations.scd_data_definitions import PartialCreateOperationalIntentReference
+from scd_operations.data_definitions import PartialCreateOperationalIntentReference
+from dotenv import load_dotenv, find_dotenv
 
 logger = logging.getLogger("django")
-from dotenv import load_dotenv, find_dotenv
+
 
 load_dotenv(find_dotenv())
 
@@ -30,49 +28,8 @@ class BlenderDatabaseReader:
     """
     A file to unify read and write operations to the database. Eventually caching etc. can be added via this file
     """
-
-    def get_all_flight_declarations(self) -> Tuple[None, List[FlightDeclaration]]:
-        flight_declarations = FlightDeclaration.objects.all()
-        return flight_declarations
-
     def check_flight_declaration_exists(self, flight_declaration_id: str) -> bool:
         return FlightDeclaration.objects.filter(id=flight_declaration_id).exists()
-
-    def get_flight_declaration_by_id(
-        self, flight_declaration_id: str
-    ) -> Tuple[None, FlightDeclaration]:
-        try:
-            flight_declaration = FlightDeclaration.objects.get(id=flight_declaration_id)
-            return flight_declaration
-        except FlightDeclaration.DoesNotExist:
-            return None
-
-    def get_flight_authorization_by_flight_declaration_obj(
-        self, flight_declaration: FlightDeclaration
-    ) -> Tuple[None, FlightAuthorization]:
-        try:
-            flight_authorization = FlightAuthorization.objects.get(
-                declaration=flight_declaration
-            )
-            return flight_authorization
-        except FlightDeclaration.DoesNotExist:
-            return None
-        except FlightAuthorization.DoesNotExist:
-            return None
-
-    def get_flight_authorization_by_flight_declaration(
-        self, flight_declaration_id: str
-    ) -> Tuple[None, FlightAuthorization]:
-        try:
-            flight_declaration = FlightDeclaration.objects.get(id=flight_declaration_id)
-            flight_authorization = FlightAuthorization.objects.get(
-                declaration=flight_declaration
-            )
-            return flight_authorization
-        except FlightDeclaration.DoesNotExist:
-            return None
-        except FlightAuthorization.DoesNotExist:
-            return None
 
     def get_current_flight_declaration_ids(self, now: str) -> Tuple[None, uuid4]:
         """This method gets flight operation ids that are active in the system within near the time interval"""
@@ -125,7 +82,7 @@ class BlenderDatabaseWriter:
             return False
 
     def create_flight_declaration(
-        self, flight_declaration_creation: FlightDeclarationCreationPayload
+        self, flight_declaration_creation
     ) -> bool:
         try:
             flight_declaration = FlightDeclaration(
@@ -142,30 +99,6 @@ class BlenderDatabaseWriter:
         except IntegrityError as ie:
             return False
 
-    def create_flight_authorization_with_submitted_operational_intent(
-        self, flight_declaration: FlightDeclaration, dss_operational_intent_id: str
-    ) -> bool:
-        try:
-            flight_authorization = FlightAuthorization(
-                declaration=flight_declaration,
-                dss_operational_intent_id=dss_operational_intent_id,
-            )
-            flight_authorization.save()
-            return True
-
-        except IntegrityError as ie:
-            return False
-
-    def create_flight_authorization(self, flight_declaration_id: str) -> bool:
-        try:
-            flight_declaration = FlightDeclaration.objects.get(id=flight_declaration_id)
-            flight_authorization = FlightAuthorization(declaration=flight_declaration)
-            flight_authorization.save()
-            return True
-        except FlightDeclaration.DoesNotExist:
-            return False
-        except IntegrityError as ie:
-            return False
 
     def update_telemetry_timestamp(self, flight_declaration_id: str) -> bool:
         now = arrow.now().isoformat()
@@ -175,16 +108,6 @@ class BlenderDatabaseWriter:
             flight_declaration.save()
             return True
         except FlightDeclaration.DoesNotExist:
-            return False
-
-    def update_flight_authorization_op_int(
-        self, flight_authorization: FlightAuthorization, dss_operational_intent_id
-    ) -> bool:
-        try:
-            flight_authorization.dss_operational_intent_id = dss_operational_intent_id
-            flight_authorization.save()
-            return True
-        except Exception as e:
             return False
 
     def update_flight_operation_operational_intent(
@@ -198,17 +121,6 @@ class BlenderDatabaseWriter:
                 asdict(operational_intent)
             )
             # TODO: Convert the updated operational intent to GeoJSON
-            flight_declaration.save()
-            return True
-        except Exception as e:
-            return False
-
-    def update_flight_operation_state(
-        self, flight_declaration_id: str, state: int
-    ) -> bool:
-        try:
-            flight_declaration = FlightDeclaration.objects.get(id=flight_declaration_id)
-            flight_declaration.state = state
             flight_declaration.save()
             return True
         except Exception as e:

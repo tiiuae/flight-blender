@@ -5,6 +5,11 @@ import json
 
 from rest_framework import serializers
 
+from common.data_definitions import OPERATION_STATES, OPERATOR_EVENT_LOOKUP
+from conformance_monitoring_operations.conformance_checks_handler import (
+    FlightOperationConformanceHelper,
+)
+
 from .models import FlightDeclaration
 from .utils import OperationalIntentsConverter
 
@@ -42,7 +47,7 @@ class FlightDeclarationRequestSerializer(serializers.Serializer):
         required=False, default="No Flight Information"
     )
     start_datetime = serializers.DateTimeField(required=False, default=None)
-    end_datetime = serializers.DateTimeField(required=False,default=None)
+    end_datetime = serializers.DateTimeField(required=False, default=None)
     type_of_operation = serializers.IntegerField(required=False, default=0)
     vehicle_id = serializers.CharField(required=False, default="000")
     submitted_by = serializers.CharField(required=False, default=None)
@@ -110,6 +115,60 @@ class FlightDeclarationApprovalSerializer(serializers.ModelSerializer):
 
 
 class FlightDeclarationStateSerializer(serializers.ModelSerializer):
+    # Custom validator function to validate the state field when calling this class based model update view.
+    def validate_state(self, value):
+        if self.instance and value not in list(OPERATOR_EVENT_LOOKUP.keys()):
+            raise serializers.ValidationError(
+                "An operator can only set the state to Activated (2), Contingent (4) or Ended (5) using this endpoint"
+            )
+
+        current_state = self.instance.state
+
+        if current_state == 5:
+            raise serializers.ValidationError(
+                "Cannot change state of an operation that has already set as ended"
+            )
+
+        event = OPERATOR_EVENT_LOOKUP[value]
+        flight_declaration_id = str(self.instance.id)
+        conformance_helper = FlightOperationConformanceHelper(
+            flight_declaration_id=flight_declaration_id
+        )
+        is_transition_valid = conformance_helper.verify_operation_state_transition(
+            original_state=current_state, new_state=value, event=event
+        )
+
+        if not is_transition_valid:
+            raise serializers.ValidationError(
+                "State transition to {new_state} from current state of {current_state} is not allowed per the ASTM standards".format(
+                    new_state=OPERATION_STATES[value][1],
+                    current_state=OPERATION_STATES[current_state][1],
+                )
+            )
+
+        return value
+
+    def update(self, instance, validated_data):
+        fd = FlightDeclaration.objects.get(pk=instance.id)
+        original_state = fd.state
+        FlightDeclaration.objects.filter(pk=instance.id).update(**validated_data)
+
+        # Save the database and trigger management command
+        new_state = validated_data["state"]
+        event = OPERATOR_EVENT_LOOKUP[new_state]
+        fd.add_state_history_entry(
+            original_state=original_state,
+            new_state=new_state,
+            notes="State changed by operator",
+        )
+        conformance_helper = FlightOperationConformanceHelper(
+            flight_declaration_id=str(fd.id)
+        )
+        conformance_helper.manage_operation_state_transition(
+            original_state=original_state, new_state=new_state, event=event
+        )
+        return fd
+
     class Meta:
         model = FlightDeclaration
         fields = (

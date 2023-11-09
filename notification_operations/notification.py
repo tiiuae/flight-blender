@@ -17,10 +17,13 @@ load_dotenv(find_dotenv())
 def send_operational_update_message(
     flight_declaration_id: str,
     message_text: str,
-    level:str,
+    level: str,
     timestamp: str = None,
     log_message: str = "No log message provided",
 ):
+    """
+    All arguments should be provided as String values in order to serialize the data by Celery to JSON
+    """
     amqp_connection_url = env.get("AMQP_URL", 0)
     if not amqp_connection_url:
         logger.info("No AMQP URL specified")

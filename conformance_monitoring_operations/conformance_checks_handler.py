@@ -5,9 +5,9 @@ from os import environ as env
 from common.database_operations import BlenderDatabaseReader, BlenderDatabaseWriter
 from django.core import management
 from dotenv import find_dotenv, load_dotenv
-
 from .operation_states import FlightOperationStateMachine, get_status
-
+from conformance_monitoring_operations import db_operations as db_ops
+from common.data_definitions import OperationEvent
 load_dotenv(find_dotenv())
 
 ENV_FILE = find_dotenv()
@@ -25,9 +25,7 @@ class FlightOperationConformanceHelper:
     def __init__(self, flight_declaration_id: str):
         self.flight_declaration_id = flight_declaration_id
         self.database_reader = BlenderDatabaseReader()
-        self.flight_declaration = self.database_reader.get_flight_declaration_by_id(
-            flight_declaration_id=self.flight_declaration_id
-        )
+        self.flight_declaration =  db_ops.get_flight_declaration_by_id(id=flight_declaration_id)
         self.database_writer = BlenderDatabaseWriter()
         self.ENABLE_CONFORMANCE_MONITORING = int(
             os.getenv("ENABLE_CONFORMANCE_MONITORING", 0)
@@ -40,11 +38,10 @@ class FlightOperationConformanceHelper:
         """
         This class updates the state of a flight operation.
         """
-        my_operation_state_machine = FlightOperationStateMachine(state=original_state)
-        logger.info("Current Operation State %s" % my_operation_state_machine.state)
-
-        my_operation_state_machine.on_event(event)
-        new_state = get_status(my_operation_state_machine.state)
+        operation_state_machine = FlightOperationStateMachine(state=original_state)
+        logger.info("Current Operation State %s" % operation_state_machine.state)
+        operation_state_machine.on_event(event)
+        new_state = get_status(operation_state_machine.state)
         if original_state == new_state:
             ## The event cannot trigger a change of state, flight state is not updated
             logger.info("State change verification failed")
@@ -59,7 +56,7 @@ class FlightOperationConformanceHelper:
         This method manages the communication with DSS once a new state has been received by the POST method
         """
         if new_state == 5:  # operation has ended
-            if event == "operator_confirms_ended":
+            if event == OperationEvent.OPERATOR_CONFIRMS_ENDED:
                 if self.USSP_NETWORK_ENABLED:
                     management.call_command(
                         "operation_ended_clear_dss",
@@ -81,8 +78,8 @@ class FlightOperationConformanceHelper:
 
         elif new_state == 4:  # handle entry into contingent state
             if original_state == 2 and event in [
-                "operator_initiates_contingent",
-                "blender_confirms_contingent",
+                OperationEvent.OPERATOR_INITIATES_CONTINGENT,
+                OperationEvent.BLENDER_CONFIRMS_CONTINGENT,
             ]:
                 # Operator activates contingent state from Activated state
                 if self.USSP_NETWORK_ENABLED:
@@ -93,8 +90,8 @@ class FlightOperationConformanceHelper:
                     )
 
             elif original_state == 3 and event in [
-                "timeout",
-                "operator_confirms_contingent",
+                OperationEvent.TIMEOUT,
+                OperationEvent.OPERATOR_CONFIRMS_CONTINGENT,
             ]:
                 # Operator activates contingent state / timeout from Non-conforming state
                 if self.USSP_NETWORK_ENABLED:
@@ -105,7 +102,7 @@ class FlightOperationConformanceHelper:
                     )
 
         elif new_state == 3:  # handle entry in non-conforming state
-            if event == "ua_exits_coordinated_op_intent" and original_state in [1, 2]:
+            if event == OperationEvent.UA_EXITS_COORDINATED_OP_INTENT and original_state in [1, 2]:
                 # Enters non-conforming from Accepted
                 # Command: Update / expand volumes, if DSS is present
                 if self.USSP_NETWORK_ENABLED:
@@ -115,7 +112,7 @@ class FlightOperationConformanceHelper:
                         dry_run=0,
                     )
 
-            elif event == "ua_departs_early_late" and original_state in [1, 2]:
+            elif event == OperationEvent.UA_DEPARTS_EARLY_LATE_OUTSIDE_OP_INTENT and original_state in [1, 2]:
                 # Enters non-conforming from Accepted
                 # Command: declare non-conforming, no need to update volumes
                 if self.USSP_NETWORK_ENABLED:
@@ -126,7 +123,7 @@ class FlightOperationConformanceHelper:
                     )
 
         elif new_state == 2:  # handle entry into activated state
-            if original_state == 1 and event == "operator_activates":
+            if original_state == 1 and event == OperationEvent.OPERATOR_ACTIVATES:
                 # Operator activates accepted state to Activated state
                 if self.USSP_NETWORK_ENABLED:
                     management.call_command(
