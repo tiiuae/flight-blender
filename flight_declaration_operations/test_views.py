@@ -432,7 +432,7 @@ class FlightDeclarationSignedPostTests(APITestCase):
         assert response.headers.get("Signature")
 
 
-@pytest.mark.usefixtures("create_flight_plan")
+@pytest.mark.usefixtures("create_flight_plans")
 class FlightDeclarationGetTests(APITestCase):
     """
     Contains tests for class FlightDeclarationList

@@ -1,12 +1,21 @@
+import arrow
 import pytest
-from django.test import TestCase
 from django.core import management
-from django.core.management.base import CommandError
 from django.core.exceptions import ValidationError
+from django.core.management.base import CommandError
+from django.test import TestCase
+
+from common.data_definitions import OPERATION_STATES
+from flight_declaration_operations import models as fdo_models
+from scd_operations.data_definitions import LatLngPoint
+
 from ..conformance_monitoring_operations import operation_states as os
+from ..conformance_monitoring_operations import utils
+from ..conformance_monitoring_operations.conformance_state_checks import (
+    ConformanceChecksList,
+)
 
 
-# os = operation_state
 class OperationStateTests(TestCase):
     def test_state_numbers(self):
         test_inputs = [
@@ -128,25 +137,297 @@ class OperationStateTests(TestCase):
 
 
 # TODO Not all logics are covered yet
-#Tests for management/commands/
+# Tests for management/commands/
 class MgmtCmdsOperatorDeclaresContingencyTests(TestCase):
     def test_no_flight_declaration_id(self):
-        with pytest.raises(CommandError, match=r"Incomplete command, Flight Declaration ID not provided"):
+        with pytest.raises(
+            CommandError,
+            match=r"Incomplete command, Flight Declaration ID not provided",
+        ):
             management.call_command(
-                            "operator_declares_contingency",
-                            dry_run=0,
-                        )
+                "operator_declares_contingency",
+                dry_run=0,
+            )
+
     def test_invalid_uuid(self):
         with pytest.raises(ValidationError, match=r"['“001” is not a valid UUID.']"):
             management.call_command(
-                            "operator_declares_contingency",
-                            flight_declaration_id="001",
-                            dry_run=0,
-                        )
+                "operator_declares_contingency",
+                flight_declaration_id="001",
+                dry_run=0,
+            )
+
     def test_non_existent_uuid(self):
-        with pytest.raises(CommandError, match=r"Flight Declaration with ID 2e0f965b-c511-43c9-8a9c-8599533bee43 does not exist"):
+        with pytest.raises(
+            CommandError,
+            match=r"Flight Declaration with ID 2e0f965b-c511-43c9-8a9c-8599533bee43 does not exist",
+        ):
             management.call_command(
-                            "operator_declares_contingency",
-                            flight_declaration_id="2e0f965b-c511-43c9-8a9c-8599533bee43",
-                            dry_run=0,
-                        )
+                "operator_declares_contingency",
+                flight_declaration_id="2e0f965b-c511-43c9-8a9c-8599533bee43",
+                dry_run=0,
+            )
+
+
+class FlightAuthorizationConformantTests(TestCase):
+    @pytest.mark.usefixtures("submit_flight_plan_for_conformance_monitoring_no_auth")
+    def test_flight_authorization_conformance_no_authorization(self):
+        fd = fdo_models.FlightDeclaration.objects.filter().first()
+        self.assertIsNotNone(fd.id)
+
+        # Check Flight authorization conformance
+        conformance_ops = utils.BlenderConformanceEngine()
+        flight_authorization_conformant = (
+            conformance_ops.check_flight_authorization_conformance(
+                flight_declaration_id=fd.id
+            )
+        )
+        # C11: No Flight Authorization
+        self.assertEqual(flight_authorization_conformant, ConformanceChecksList.C11)
+
+    @pytest.mark.usefixtures("submit_flight_plan_for_conformance_monitoring_with_auth")
+    def test_flight_authorization_conformance_invalid_state(self):
+        fd = fdo_models.FlightDeclaration.objects.filter().first()
+        self.assertIsNotNone(fd.id)
+
+        fa = fdo_models.FlightAuthorization.objects.filter().first()
+        self.assertIsNotNone(fa.id)
+
+        # Check Flight authorization conformance
+        conformance_ops = utils.BlenderConformanceEngine()
+        flight_authorization_conformant = (
+            conformance_ops.check_flight_authorization_conformance(
+                flight_declaration_id=fd.id
+            )
+        )
+        # C10: State not in accepted, non-conforming, activated
+        self.assertEqual(flight_authorization_conformant, ConformanceChecksList.C10)
+
+    @pytest.mark.usefixtures("submit_flight_plan_for_conformance_monitoring_with_auth")
+    def test_flight_authorization_conformance_no_telemetry(self):
+        fd = fdo_models.FlightDeclaration.objects.filter().first()
+        self.assertIsNotNone(fd.id)
+        fd.state = OPERATION_STATES[2][0]  # Activate the flight
+        fd.save()
+        fa = fdo_models.FlightAuthorization.objects.filter().first()
+        self.assertIsNotNone(fa.id)
+        # Check Flight authorization conformance
+        conformance_ops = utils.BlenderConformanceEngine()
+        flight_authorization_conformant = (
+            conformance_ops.check_flight_authorization_conformance(
+                flight_declaration_id=fd.id
+            )
+        )
+        # C9a: Telemetry not received
+        self.assertEqual(flight_authorization_conformant, ConformanceChecksList.C9a)
+
+    @pytest.mark.usefixtures("submit_flight_plan_for_conformance_monitoring_with_auth")
+    def test_flight_authorization_conformance_no_telemetry_within_15_seconds(self):
+        fd = fdo_models.FlightDeclaration.objects.filter().first()
+        self.assertIsNotNone(fd.id)
+        fd.state = OPERATION_STATES[2][0]  # Activate the flight
+        now = arrow.now()
+        fd.latest_telemetry_datetime = now.shift(seconds=-20).isoformat()
+        fd.save()
+        fa = fdo_models.FlightAuthorization.objects.filter().first()
+        self.assertIsNotNone(fa.id)
+        # Check Flight authorization conformance
+        conformance_ops = utils.BlenderConformanceEngine()
+        flight_authorization_conformant = (
+            conformance_ops.check_flight_authorization_conformance(
+                flight_declaration_id=fd.id
+            )
+        )
+        # C9b: Telemetry not received within last 15 secs
+        self.assertEqual(flight_authorization_conformant, ConformanceChecksList.C9b)
+
+    @pytest.mark.usefixtures("submit_flight_plan_for_conformance_monitoring_with_auth")
+    def test_flight_authorization_conformance_valid(self):
+        fd = fdo_models.FlightDeclaration.objects.filter().first()
+        self.assertIsNotNone(fd.id)
+        fd.state = OPERATION_STATES[2][0]  # Activate the flight
+        now = arrow.now()
+        fd.latest_telemetry_datetime = now.shift(seconds=-5).isoformat()
+        fd.save()
+        fa = fdo_models.FlightAuthorization.objects.filter().first()
+        self.assertIsNotNone(fa.id)
+        # Check Flight authorization conformance
+        conformance_ops = utils.BlenderConformanceEngine()
+        flight_authorization_conformant = (
+            conformance_ops.check_flight_authorization_conformance(
+                flight_declaration_id=fd.id
+            )
+        )
+        # Flight is conformance in terms of FLight Authorization checks
+        self.assertEqual(flight_authorization_conformant, True)
+
+
+class FlightOperationConformantTests(TestCase):
+    @pytest.mark.usefixtures("submit_flight_plan_for_conformance_monitoring_with_auth")
+    def test_operation_conformance_invalid_aircraft_id(self):
+        fd = fdo_models.FlightDeclaration.objects.filter().first()
+        self.assertIsNotNone(fd.id)
+
+        fa = fdo_models.FlightAuthorization.objects.filter().first()
+        self.assertIsNotNone(fa.id)
+
+        conformance_ops = utils.BlenderConformanceEngine()
+        conformant_via_telemetry = (
+            conformance_ops.is_operation_conformant_via_telemetry(
+                flight_declaration_id=fd.id,
+                aircraft_id="111111",
+                telemetry_location=LatLngPoint(lat=0, lng=0),
+                altitude_m_wgs_84=float(0),
+            )
+        )
+
+        # C3: Telemetry Auth mismatch
+        self.assertEqual(conformant_via_telemetry, ConformanceChecksList.C3)
+
+    @pytest.mark.usefixtures("submit_flight_plan_for_conformance_monitoring_with_auth")
+    def test_operation_conformance_invalid_state(self):
+        fd = fdo_models.FlightDeclaration.objects.filter().first()
+        self.assertIsNotNone(fd.id)
+        fd.state = OPERATION_STATES[6][0]
+        fd.save()
+
+        fa = fdo_models.FlightAuthorization.objects.filter().first()
+        self.assertIsNotNone(fa.id)
+
+        conformance_ops = utils.BlenderConformanceEngine()
+        conformant_via_telemetry = (
+            conformance_ops.is_operation_conformant_via_telemetry(
+                flight_declaration_id=fd.id,
+                aircraft_id="990099",  # This value is from conftest record
+                telemetry_location=LatLngPoint(lat=0, lng=0),
+                altitude_m_wgs_84=float(0),
+            )
+        )
+
+        # C4: Operation state invalid
+        self.assertEqual(conformant_via_telemetry, ConformanceChecksList.C4)
+
+    @pytest.mark.usefixtures("submit_flight_plan_for_conformance_monitoring_with_auth")
+    def test_operation_conformance_flight_not_activated(self):
+        fd = fdo_models.FlightDeclaration.objects.filter().first()
+        self.assertIsNotNone(fd.id)
+        fd.state = OPERATION_STATES[1][0]
+        fd.save()
+
+        fa = fdo_models.FlightAuthorization.objects.filter().first()
+        self.assertIsNotNone(fa.id)
+
+        conformance_ops = utils.BlenderConformanceEngine()
+        conformant_via_telemetry = (
+            conformance_ops.is_operation_conformant_via_telemetry(
+                flight_declaration_id=fd.id,
+                aircraft_id="990099",  # This value is from conftest record
+                telemetry_location=LatLngPoint(lat=0, lng=0),
+                altitude_m_wgs_84=float(0),
+            )
+        )
+
+        # C5: Operation not activated
+        self.assertEqual(conformant_via_telemetry, ConformanceChecksList.C5)
+
+    @pytest.mark.usefixtures("submit_flight_plan_for_conformance_monitoring_with_auth")
+    def test_operation_conformance_flight_invalid_telemetry_time(self):
+        fd = fdo_models.FlightDeclaration.objects.filter().first()
+        self.assertIsNotNone(fd.id)
+        fd.state = OPERATION_STATES[2][0]
+        fd.save()
+
+        fa = fdo_models.FlightAuthorization.objects.filter().first()
+        self.assertIsNotNone(fa.id)
+
+        conformance_ops = utils.BlenderConformanceEngine()
+        conformant_via_telemetry = (
+            conformance_ops.is_operation_conformant_via_telemetry(
+                flight_declaration_id=fd.id,
+                aircraft_id="990099",  # This value is from conftest record
+                telemetry_location=LatLngPoint(lat=0, lng=0),
+                altitude_m_wgs_84=float(0),
+            )
+        )
+
+        # C6: Telemetry time incorrect
+        self.assertEqual(conformant_via_telemetry, ConformanceChecksList.C6)
+
+    # Submits a flight plan with real time!
+    @pytest.mark.usefixtures(
+        "submit_real_time_flight_plan_for_conformance_monitoring_with_auth"
+    )
+    def test_operation_conformance_flight_invalid_altitude(self):
+        fd = fdo_models.FlightDeclaration.objects.filter().first()
+        self.assertIsNotNone(fd.id)
+        fd.state = OPERATION_STATES[2][0]
+        fd.save()
+
+        fa = fdo_models.FlightAuthorization.objects.filter().first()
+        self.assertIsNotNone(fa.id)
+
+        conformance_ops = utils.BlenderConformanceEngine()
+        conformant_via_telemetry = (
+            conformance_ops.is_operation_conformant_via_telemetry(
+                flight_declaration_id=fd.id,
+                aircraft_id="990099",  # This value is from conftest record
+                telemetry_location=LatLngPoint(lat=3, lng=6),
+                altitude_m_wgs_84=float(12),  # Altitude must be within 90-100
+            )
+        )
+
+        # C7b: Flight altitude out of bounds
+        self.assertEqual(conformant_via_telemetry, ConformanceChecksList.C7b)
+
+    # Submits a flight plan with real time!
+    @pytest.mark.usefixtures(
+        "submit_real_time_flight_plan_for_conformance_monitoring_with_auth"
+    )
+    def test_operation_conformance_flight_invalid_bounds(self):
+        fd = fdo_models.FlightDeclaration.objects.filter().first()
+        self.assertIsNotNone(fd.id)
+        fd.state = OPERATION_STATES[2][0]
+        fd.save()
+
+        fa = fdo_models.FlightAuthorization.objects.filter().first()
+        self.assertIsNotNone(fa.id)
+
+        conformance_ops = utils.BlenderConformanceEngine()
+        conformant_via_telemetry = (
+            conformance_ops.is_operation_conformant_via_telemetry(
+                flight_declaration_id=fd.id,
+                aircraft_id="990099",  # This value is from conftest record
+                telemetry_location=LatLngPoint(lat=1.0, lng=1.0),
+                altitude_m_wgs_84=float(95),  # Altitude must be within 90-100
+            )
+        )
+
+        # C7a: Flight out of bounds
+        self.assertEqual(conformant_via_telemetry, ConformanceChecksList.C7a)
+
+    # Submits a flight plan with real time!
+    @pytest.mark.usefixtures(
+        "submit_real_time_flight_plan_for_conformance_monitoring_with_auth"
+    )
+    def test_operation_conformance_flight_valid(self):
+        fd = fdo_models.FlightDeclaration.objects.filter().first()
+        self.assertIsNotNone(fd.id)
+        fd.state = OPERATION_STATES[2][0]
+        fd.save()
+
+        fa = fdo_models.FlightAuthorization.objects.filter().first()
+        self.assertIsNotNone(fa.id)
+
+        conformance_ops = utils.BlenderConformanceEngine()
+        conformant_via_telemetry = (
+            conformance_ops.is_operation_conformant_via_telemetry(
+                flight_declaration_id=fd.id,
+                aircraft_id="990099",  # This value is from conftest record
+                telemetry_location=LatLngPoint(
+                    lat=46.9885, lng=7.4707
+                ),  # Telemetry location should be within valid Point
+                altitude_m_wgs_84=float(95),  # Altitude must be within 90-100
+            )
+        )
+        # Flight is conformance in terms of FLight Operation checks
+        self.assertEqual(conformant_via_telemetry, True)

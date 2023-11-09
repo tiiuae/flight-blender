@@ -7,14 +7,14 @@ from dotenv import find_dotenv, load_dotenv
 from shapely.geometry import Point
 from shapely.geometry import Polygon as Plgn
 
+from common.data_definitions import OPERATION_STATES
+from conformance_monitoring_operations import db_operations as db_ops
 from conformance_monitoring_operations.data_definitions import PolygonAltitude
+from flight_declaration_operations import models as fdo_models
 from scd_operations.data_definitions import LatLngPoint
 
 from .conformance_state_checks import ConformanceChecksList
 from .data_helper import cast_to_volume4d
-from conformance_monitoring_operations import db_operations as db_ops
-from flight_declaration_operations import models as fdo_models
-from common.data_definitions import OPERATION_STATES
 
 load_dotenv(find_dotenv())
 
@@ -50,40 +50,40 @@ class BlenderConformanceEngine:
         """
         now = arrow.now()
 
-        flight_declaration = db_ops.get_flight_declaration_by_id(id=flight_declaration_id)
+        fd = db_ops.get_flight_declaration_by_id(id=flight_declaration_id)
 
         # Flight Operation and Flight Authorization exists, create a notifications helper
 
-        operation_start_time = arrow.get(flight_declaration.start_datetime)
-        operation_end_time = arrow.get(flight_declaration.end_datetime)
+        operation_start_time = arrow.get(fd.start_datetime)
+        operation_end_time = arrow.get(fd.end_datetime)
 
         # C3 check
         try:
-            assert flight_declaration.aircraft_id == aircraft_id
+            assert fd.aircraft_id == aircraft_id
         except AssertionError:
             return ConformanceChecksList.C3
 
         # Check flight is not processing, ended, withdrawn, cancelled, rejected
         try:
-            assert flight_declaration.state not in [
+            assert fd.state not in [
                 OPERATION_STATES[0][0],
                 OPERATION_STATES[5][0],
                 OPERATION_STATES[6][0],
                 OPERATION_STATES[7][0],
-                OPERATION_STATES[8][0]
+                OPERATION_STATES[8][0],
             ]
         except AssertionError:
             return ConformanceChecksList.C4
         try:
             # Check flight is activated, nonconforming contingent
-            assert flight_declaration.state in [
+            assert fd.state in [
                 OPERATION_STATES[2][0],
                 OPERATION_STATES[3][0],
-                OPERATION_STATES[4][0]
+                OPERATION_STATES[4][0],
             ]
         except AssertionError:
             return ConformanceChecksList.C5
-        
+
         # C6 check
         try:
             assert is_time_between(
@@ -99,7 +99,7 @@ class BlenderConformanceEngine:
         # Construct the boundary of the current operation by getting the operational intent
 
         # TODO: Cache this so that it need not be done every time
-        operational_intent = json.loads(flight_declaration.operational_intent)
+        operational_intent = fd.operational_intent
         all_volumes = operational_intent["volumes"]
         # The provided telemetry location cast as a Shapely Point
         lng = float(telemetry_location.lng)
@@ -132,7 +132,6 @@ class BlenderConformanceEngine:
             altitude_conformant = (
                 True if altitude_lower <= altitude_m_wgs_84 <= altitude_upper else False
             )
-
             rid_obs_within_all_volumes.append(is_within)
             rid_obs_within_altitudes.append(altitude_conformant)
 
@@ -142,13 +141,13 @@ class BlenderConformanceEngine:
         try:
             assert aircraft_altitude_conformant
         except AssertionError:
-            return ConformanceChecksList.C7a
+            return ConformanceChecksList.C7b
         try:
             assert aircraft_bounds_conformant
         except AssertionError:
-            return ConformanceChecksList.C7b
+            return ConformanceChecksList.C7a
 
-        # C8 check Check if aircraft is not breaching any active Geofences
+        # C8 check Check if aircraft is not breaching any active Geo fences
         # TODO
         return True
 
@@ -164,11 +163,10 @@ class BlenderConformanceEngine:
         now = arrow.now()
         fd = fdo_models.FlightDeclaration.objects.get(id=flight_declaration_id)
         try:
-           fdo_models.FlightAuthorization.objects.get(declaration=fd)
+            fdo_models.FlightAuthorization.objects.get(declaration=fd)
         except fdo_models.FlightAuthorization.DoesNotExist:
             # if flight state is accepted, then change it to ended and delete from dss
             return ConformanceChecksList.C11
-        
 
         # The time the most recent telemetry was sent
         latest_telemetry_datetime = fd.latest_telemetry_datetime
@@ -194,9 +192,8 @@ class BlenderConformanceEngine:
                 <= latest_telemetry_datetime
                 <= fifteen_seconds_after_now
             ):
-                
-                return ConformanceChecksList.C9a
+                return ConformanceChecksList.C9b
         else:
             # declare state as contingent
-            return ConformanceChecksList.C9b
+            return ConformanceChecksList.C9a
         return True
