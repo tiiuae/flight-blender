@@ -1100,7 +1100,7 @@ class ConformanceMonitoringWithFlights(APITestCase):
         self.assertEqual(flight_trackings[1].notes, "State changed by operator")
         self.assertEqual(
             flight_trackings[2].notes,
-            "State changed by flight authorization checks because of telemetry non-conformance: C9b",
+            "State changed by flight authorization checks because of telemetry non-conformance: C9a",
         )
 
     # Accepted -> Activated -> Conformance monitoring is enabled but no Flight authorization record
