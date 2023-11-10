@@ -1,26 +1,31 @@
 import requests
 from rest_framework import status
 
+WEATHER_TOPICS = [
+    "temperature_2m",
+    "showers",
+    "windspeed_10m",
+    "winddirection_10m",
+    "windgusts_10m",
+]
+
 
 class WeatherService:
-    def __init__(self, api_url):
-        self.api_url = api_url
+    def __init__(self, base_url):
+        self.base_url = base_url
+        # Add more API related properties as needed
 
-    def get_weather_data(
-        self, longitude, latitude, time, timezone=None, hourly_data=None
-    ):
-        # Build API request
+    def get_weather(self, longitude, latitude, time, timezone):
+        url = f"{self.base_url}"
         params = {
             "longitude": longitude,
             "latitude": latitude,
             "time": time,
+            "timezone": timezone,
             "forecast_days": "1",
+            "hourly": ",".join(WEATHER_TOPICS),
         }
-        if timezone:
-            params["timezone"] = timezone
-        if hourly_data:
-            params["hourly"] = ",".join(hourly_data)
-        url = f"{self.api_url}"
+
         response = requests.get(url, params=params)
 
         if response.status_code == status.HTTP_200_OK:

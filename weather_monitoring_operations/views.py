@@ -1,34 +1,44 @@
-from django.http import JsonResponse
-from rest_framework.decorators import api_view
-from auth_helper.utils import requires_scopes
-from unittest.mock import patch
-from .weather_service import WeatherService
-import time
+import arrow
+from django.conf import settings
+from rest_framework import status
+from rest_framework.response import Response
+from rest_framework.views import APIView
 
+from services.weather_service import WeatherService
 
-@api_view(["GET"])
-@requires_scopes(["blender.read"])
-def get_weather_data(request):
-    data = _fetch_weather_data()
+from .serializers import WeatherSerializer
 
-    return JsonResponse(data, safe=False)
+class WeatherAPIView(APIView):
+    def get(self, request, *args, **kwargs):
+        longitude = request.query_params.get("longitude")
+        latitude = request.query_params.get("latitude")
+        time = request.query_params.get("time")
+        timezone = request.query_params.get("timezone")
 
+        if not longitude:
+            return Response(
+                {"error": "Longitude parameter is required"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
-def _fetch_weather_data():
-    weather_service = WeatherService("https://api.open-meteo.com/v1/forecast")
+        if not latitude:
+            return Response(
+                {"error": "Latitude parameter is required"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
-    weather_data_response = weather_service.get_weather_data(
-        24.4512,
-        54.397,
-        time.time(),
-        "UTC",
-        [
-            "temperature_2m",
-            "showers",
-            "windspeed_10m",
-            "winddirection_10m",
-            "windgusts_10m",
-        ],
-    )
+        time = time if time else arrow.now().timestamp()
 
-    return weather_data_response
+        timezone = timezone if timezone else "UTC"
+
+        weather_service = WeatherService(base_url=settings.WEATHER_API_BASE_URL)
+        weather_data = weather_service.get_weather(
+            longitude,
+            latitude,
+            time,
+            timezone
+        )
+
+        serializer = WeatherSerializer(data=weather_data)
+        serializer.is_valid(raise_exception=True)
+        return Response(serializer.data)
