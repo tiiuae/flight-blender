@@ -1,13 +1,17 @@
 import arrow
 from django.conf import settings
+from django.utils.decorators import method_decorator
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from auth_helper.utils import requires_scopes
 from services.weather_service import WeatherService
 
 from .serializers import WeatherSerializer
 
+
+@method_decorator(requires_scopes(["blender.write"]), name="dispatch")
 class WeatherAPIView(APIView):
     def get(self, request, *args, **kwargs):
         longitude = request.query_params.get("longitude")
@@ -32,12 +36,7 @@ class WeatherAPIView(APIView):
         timezone = timezone if timezone else "UTC"
 
         weather_service = WeatherService(base_url=settings.WEATHER_API_BASE_URL)
-        weather_data = weather_service.get_weather(
-            longitude,
-            latitude,
-            time,
-            timezone
-        )
+        weather_data = weather_service.get_weather(longitude, latitude, time, timezone)
 
         serializer = WeatherSerializer(data=weather_data)
         serializer.is_valid(raise_exception=True)
