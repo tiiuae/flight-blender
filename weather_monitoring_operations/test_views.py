@@ -258,3 +258,19 @@ class WeatherMonitoringOperationsTests(APITestCase):
         self.assertEqual(response.json()["timezone_abbreviation"], "UTC")
         self.assertEqual(response.json()["elevation"], 129.0)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    @patch("requests.get")
+    def test_get_weather_error_response(self, mock_get):
+        mock_error_text = "Service not available"
+        mock_get.return_value.status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
+        mock_get.return_value.text = mock_error_text
+
+        with self.assertRaises(Exception) as context:
+            self.client.get(
+                self.api_url + "?longitude=100.01&latitude=100.02",
+                content_type="application/json",
+            )
+
+        self.assertEqual(
+            str(context.exception), "Error fetching weather data: Service not available"
+        )
