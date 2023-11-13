@@ -431,3 +431,49 @@ class FlightOperationConformantTests(TestCase):
         )
         # Flight is conformance in terms of FLight Operation checks
         self.assertEqual(conformant_via_telemetry, True)
+
+
+class ConformanceStateCheckTests(TestCase):
+    def test_multiple_state_ids(self):
+        invalid_non_conformance_state_id = 0
+
+        with pytest.raises(ValueError, match="Key not found"):
+            ConformanceChecksList.state_code(invalid_non_conformance_state_id)
+
+        invalid_non_conformance_state_id = "12"
+
+        with pytest.raises(ValueError, match="Key not found"):
+            ConformanceChecksList.state_code(invalid_non_conformance_state_id)
+
+        invalid_non_conformance_state_id = None
+
+        with pytest.raises(ValueError, match="Key not found"):
+            ConformanceChecksList.state_code(invalid_non_conformance_state_id)
+
+        valid_non_conformance_state_id = ConformanceChecksList.C10
+        non_conformance_state_code = ConformanceChecksList.state_code(
+            valid_non_conformance_state_id
+        )
+        self.assertEqual(valid_non_conformance_state_id, 12)
+        self.assertEqual(non_conformance_state_code, "C10")
+
+        valid_non_conformance_state_id = ConformanceChecksList.C2
+        non_conformance_state_code = ConformanceChecksList.state_code(
+            valid_non_conformance_state_id
+        )
+        self.assertEqual(valid_non_conformance_state_id, 2)
+        self.assertEqual(non_conformance_state_code, "C2")
+
+        valid_non_conformance_state_id = ConformanceChecksList.C7a
+        non_conformance_state_code = ConformanceChecksList.state_code(
+            valid_non_conformance_state_id
+        )
+        self.assertEqual(valid_non_conformance_state_id, 7)
+        self.assertEqual(non_conformance_state_code, "C7a")
+
+        valid_non_conformance_state_id = ConformanceChecksList.C9b
+        non_conformance_state_code = ConformanceChecksList.state_code(
+            valid_non_conformance_state_id
+        )
+        self.assertEqual(valid_non_conformance_state_id, 11)
+        self.assertEqual(non_conformance_state_code, "C9b")
