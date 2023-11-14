@@ -1,34 +1,43 @@
-from django.http import JsonResponse
-from rest_framework.decorators import api_view
+import arrow
+from django.conf import settings
+from django.utils.decorators import method_decorator
+from rest_framework import status
+from rest_framework.response import Response
+from rest_framework.views import APIView
+
 from auth_helper.utils import requires_scopes
-from unittest.mock import patch
-from .weather_service import WeatherService
-import time
+from services.weather_service import WeatherService
+
+from .serializers import WeatherSerializer
 
 
-@api_view(["GET"])
-@requires_scopes(["blender.read"])
-def get_weather_data(request):
-    data = _fetch_weather_data()
+@method_decorator(requires_scopes(["blender.write"]), name="dispatch")
+class WeatherAPIView(APIView):
+    def get(self, request, *args, **kwargs):
+        longitude = request.query_params.get("longitude")
+        latitude = request.query_params.get("latitude")
+        time = request.query_params.get("time")
+        timezone = request.query_params.get("timezone")
 
-    return JsonResponse(data, safe=False)
+        if not longitude:
+            return Response(
+                {"error": "Longitude parameter is required"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
+        if not latitude:
+            return Response(
+                {"error": "Latitude parameter is required"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
-def _fetch_weather_data():
-    weather_service = WeatherService("https://api.open-meteo.com/v1/forecast")
+        time = time if time else arrow.now().timestamp()
 
-    weather_data_response = weather_service.get_weather_data(
-        24.4512,
-        54.397,
-        time.time(),
-        "UTC",
-        [
-            "temperature_2m",
-            "showers",
-            "windspeed_10m",
-            "winddirection_10m",
-            "windgusts_10m",
-        ],
-    )
+        timezone = timezone if timezone else "UTC"
 
-    return weather_data_response
+        weather_service = WeatherService(base_url=settings.WEATHER_API_BASE_URL)
+        weather_data = weather_service.get_weather(longitude, latitude, time, timezone)
+
+        serializer = WeatherSerializer(data=weather_data)
+        serializer.is_valid(raise_exception=True)
+        return Response(serializer.data)
