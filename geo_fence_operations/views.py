@@ -8,7 +8,6 @@ import uuid
 from dataclasses import asdict, is_dataclass
 from decimal import Decimal
 from typing import List
-
 import arrow
 import pyproj
 from auth_helper.common import get_redis
@@ -35,6 +34,7 @@ from .data_definitions import (
     GeoZoneChecksResponse,
     GeoZoneFilterPosition,
     GeoZoneHttpsSource,
+    ImplicitDict
 )
 from .models import GeoFence
 from .serializers import GeoFenceRequestSerializer, GeoFenceSerializer
