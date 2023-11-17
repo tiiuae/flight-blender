@@ -1,9 +1,9 @@
 import uuid
 from datetime import datetime
 
-import jwcrypto.jwk
 import pytest
 from django.urls import reverse
+from jwcrypto import jwk, jwt
 from rest_framework import status
 from rest_framework.test import APITestCase
 
@@ -13,7 +13,7 @@ from conftest import get_oauth2_token
 class RequiresScopesTests(APITestCase):
     def setUp(self):
         self.api_url = reverse("ping_auth")
-        self.dummy_private_key = jwcrypto.jwk.JWK.from_pem(
+        self.dummy_private_key = jwk.JWK.from_pem(
             "-----BEGIN RSA PRIVATE KEY-----\n"
             "MIICWwIBAAKBgHkNtpy3GB0YTCl2VCCd22i0rJwIGBSazD4QRKvH6rch0IP4igb+\n"
             "02r7t0X//tuj0VbwtJz3cEICP8OGSqrdTSCGj5Y03Oa2gPkx/0c0V8D0eSXS/CUC\n"
@@ -63,7 +63,7 @@ class RequiresScopesTests(APITestCase):
         EPOCH = datetime.utcfromtimestamp(0)
         EXPIRATION_SECONDS = 1000
         timestamp = int((datetime.utcnow() - EPOCH).total_seconds())
-        jwt_token = jwcrypto.jwt.JWT(
+        jwt_token = jwt.JWT(
             header={"typ": "JWT", "alg": "RS256"},
             claims={
                 "sub": "uss_noauth",
@@ -90,7 +90,7 @@ class RequiresScopesTests(APITestCase):
         EPOCH = datetime.utcfromtimestamp(0)
         EXPIRATION_SECONDS = 1000
         timestamp = int((datetime.utcnow() - EPOCH).total_seconds())
-        jwt_token = jwcrypto.jwt.JWT(
+        jwt_token = jwt.JWT(
             header={"typ": "JWT", "alg": "RS256", "kid": "qazwsx"},
             claims={
                 "sub": "uss_noauth",
