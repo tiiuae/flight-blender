@@ -1,14 +1,13 @@
 from dataclasses import dataclass
 from uuid import uuid4
 import enum
-import arrow
 from typing import List, Literal, Optional, Union
 from shapely.geometry import Polygon
 from implicitdict import StringBasedDateTime
 
 @dataclass
 class LatLngPoint:
-    '''A clas to hold information about LatLngPoint'''
+    '''A class to hold information about LatLngPoint'''
     lat: float
     lng: float
 
@@ -24,12 +23,8 @@ class Time:
     format: str
     value: StringBasedDateTime
 
-@dataclass
-class Radius:
-    ''' A class to hold the radius object '''
-    value: float
-    units:str
 
+#TODO: Conflicts with the import shapely.geometry import Polygon. Fix this
 @dataclass
 class Polygon:
     ''' A class to hold the polygon object '''
@@ -119,7 +114,7 @@ class DeleteFlightStatusResponseEnum(str, enum.Enum):
     Failed = 'Failed'
 
 class USSCapabilitiesResponseEnum(str, enum.Enum):
-    ''' A enum to hold USS capabilites operation '''
+    ''' A enum to hold USS capabilities operation '''
     BasicStrategicConflictDetection = 'BasicStrategicConflictDetection'
     FlightAuthorisationValidation = 'FlightAuthorisationValidation'
     HighPriorityFlights = 'HighPriorityFlights'

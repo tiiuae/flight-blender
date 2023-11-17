@@ -1,5 +1,3 @@
-import json
-
 def validate_geo_zone(geo_zone) -> bool:
     '''A class to validate GeoZones '''
     

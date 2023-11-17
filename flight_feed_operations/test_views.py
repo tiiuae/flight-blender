@@ -1,7 +1,6 @@
 """
 This file contains unit tests for the views functions in flight_feed_operations
 """
-import datetime
 import json
 
 import pytest

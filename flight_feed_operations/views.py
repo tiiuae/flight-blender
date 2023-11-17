@@ -26,13 +26,13 @@ from .data_definitions import (
 )
 from .tasks import start_openskies_stream, write_incoming_air_traffic_data
 
-logger = logging.getLogger("django")
+
 from os import environ as env
 
 from django.http import HttpRequest, HttpResponse
 from django.utils.decorators import method_decorator
 from dotenv import find_dotenv, load_dotenv
-from jwcrypto import jwk, jwt
+from jwcrypto import jwk
 from rest_framework import generics, status
 from rest_framework.parsers import JSONParser
 
@@ -51,6 +51,7 @@ from .serializers import (
     TelemetryRequest,
     TelemetryRequestSerializer,
 )
+logger = logging.getLogger("django")
 
 ENV_FILE = find_dotenv()
 if ENV_FILE:

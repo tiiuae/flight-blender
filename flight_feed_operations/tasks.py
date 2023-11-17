@@ -1,4 +1,4 @@
-import os, json
+import json
 import logging
 from .data_definitions import SingleAirtrafficObservation
 from dataclasses import asdict
@@ -18,7 +18,7 @@ if ENV_FILE:
 
 logger = logging.getLogger('django')
 
-#### Airtraffic Endpoint
+#### Air traffic Endpoint
 
 @app.task(name='write_incoming_air_traffic_data')
 def write_incoming_air_traffic_data(observation):         
