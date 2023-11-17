@@ -14,7 +14,7 @@ class OperationEvent(Enum):
         "operator_return_to_coordinated_op_intent"
     )
     OPERATOR_CONFIRMS_CONTINGENT = "operator_confirms_contingent"
-    BLENDER_CONFIRMS_CONTINGENT ="blender_confirms_contingent"
+    BLENDER_CONFIRMS_CONTINGENT = "blender_confirms_contingent"
     TIMEOUT = "timeout"
 
 
@@ -35,19 +35,6 @@ OPERATION_STATES_LOOKUP = {
     "Accepted": 1,
     "Activated": 2,
 }
-
-# TODO: Remove this
-(
-    (0, _("Not Submitted")),
-    (1, _("Accepted")),
-    (2, _("Activated")),
-    (3, _("Nonconforming")),
-    (4, _("Contingent")),
-    (5, _("Ended")),
-    (6, _("Withdrawn")),
-    (7, _("Cancelled")),
-    (8, _("Rejected")),
-)
 
 OPERATION_TYPES = (
     (1, _("VLOS")),
