@@ -8,9 +8,10 @@ import arrow
 import pyproj
 import requests
 from requests.exceptions import ConnectionError
+from rest_framework import status
 from shapely.geometry import Point, mapping, shape
 from shapely.ops import transform, unary_union
-from rest_framework import status
+
 from auth_helper.common import get_redis
 from flight_blender.celery import app
 
@@ -29,7 +30,7 @@ logger = logging.getLogger("django")
 proj_wgs84 = pyproj.Proj("+proj=longlat +datum=WGS84")
 
 
-def geodesic_point_buffer(lat, lon, km):
+def _geodesic_point_buffer(lat, lon, km):
     # Azimuthal equidistant projection
     aeqd_proj = "+proj=aeqd +lat_0={lat} +lon_0={lon} +x_0=0 +y_0=0"
     project = partial(
@@ -50,21 +51,19 @@ def download_geozone_source(geo_zone_url: str, geozone_source_id: str):
         test_status_storage = GeoAwarenessTestStatus(
             result="Error", message="Error in downloading data"
         )
-    else:
-        if geo_zone_request.status_code == status.HTTP_200_OK:
-            try:
-                geo_zone_data = geo_zone_request.json()
-                geo_zone_str = json.dumps(geo_zone_data)
-                write_geo_zone.delay(geo_zone=geo_zone_str, test_harness_datasource="1")
-                test_status_storage = GeoAwarenessTestStatus(result="Ready", message="")
-            except Exception:
-                test_status_storage = GeoAwarenessTestStatus(
-                    result="Error", message="The URL could be "
-                )
-        else:
+
+    if geo_zone_request.status_code == status.HTTP_200_OK:
+        try:
+            geo_zone_data = geo_zone_request.json()
+            geo_zone_str = json.dumps(geo_zone_data)
+            write_geo_zone.delay(geo_zone=geo_zone_str, test_harness_datasource="1")
+            test_status_storage = GeoAwarenessTestStatus(result="Ready", message="")
+        except Exception:
             test_status_storage = GeoAwarenessTestStatus(
-                result="Unsupported", message=""
+                result="Error", message="The URL could be "
             )
+    else:
+        test_status_storage = GeoAwarenessTestStatus(result="Unsupported", message="")
 
     r = get_redis()
     if r.exists(geoawareness_test_data_store):
@@ -104,7 +103,7 @@ def write_geo_zone(geo_zone: str, test_harness_datasource: str = "0"):
                     parse_error = True
                 else:
                     r = radius / 1000  # Radius in km
-                    buf = geodesic_point_buffer(lat, lng, r)
+                    buf = _geodesic_point_buffer(lat, lng, r)
                     b = mapping(buf)
                     fc = {
                         "type": "FeatureCollection",
