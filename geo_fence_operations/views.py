@@ -25,7 +25,7 @@ from shapely.ops import unary_union
 
 from . import rtree_geo_fence_helper
 from .buffer_helper import toFromUTM
-from .common import validate_geo_zone
+from .utils import validate_geo_zone
 from .data_definitions import (
     GeoAwarenessTestHarnessStatus,
     GeoAwarenessTestStatus,
