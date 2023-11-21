@@ -23,10 +23,10 @@ from shapely.geometry import Point, MultiPoint, box
 from .rid_utils import RIDVertex, RIDVolume3D, RIDVolume4D
 from itertools import cycle, islice
 from datetime import timedelta
-from dacite import from_dict
+from dotenv import load_dotenv, find_dotenv
 
 logger = logging.getLogger('django')
-from dotenv import load_dotenv, find_dotenv
+
 load_dotenv(find_dotenv())
 
 @app.task(name='submit_dss_subscription')

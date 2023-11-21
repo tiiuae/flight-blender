@@ -6,7 +6,7 @@ from dotenv import find_dotenv, load_dotenv
 from geojson import FeatureCollection
 from pyproj import Proj
 from scd_operations.data_definitions import (
-    Altitude, LatLngPoint, OperationalIntentUSSDetails,
+    Altitude, LatLngPoint,
     PartialCreateOperationalIntentReference)
 from scd_operations.data_definitions import Polygon as Plgn
 from scd_operations.data_definitions import Time, Volume3D, Volume4D

@@ -365,7 +365,7 @@ def create_test(request, test_id):
 @requires_scopes(['rid.inject_test_data'])
 def delete_test(request, test_id, version):
     ''' This is the end point for the rid_qualifier to get details of a flight '''
-    # Deleteing test
+    # Deleting test
     test_id = str(test_id)
     r = get_redis()
 

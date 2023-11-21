@@ -5,7 +5,7 @@ from django.utils.translation import gettext_lazy as _
 
 
 class GeoFence(models.Model):
-    ''' A model for Geofence storage in Flight Blender''' 
+    ''' A model for GeoFence storage in Flight Blender''' 
 
     ALTITUDE_REF = ((0, _('WGS84')),(1, _('AGL')),(2, _('MSL')),)
     

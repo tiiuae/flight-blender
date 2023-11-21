@@ -28,9 +28,3 @@ def check_view_port(view_port_coords) -> bool:
         return False
     else:
         return True
-
-# def get_view_port_area(view_port) -> float:
-#     geod = Geod(ellps="WGS84")
-#     box = shapely.geometry.box(view_port[0], view_port[1], view_port[2], view_port[3])
-#     area = abs(geod.geometry_area_perimeter(box)[0])    
-#     return area

@@ -1,8 +1,4 @@
-from datetime import datetime, timedelta
-import os
 import json
-import logging
-import requests
 
 from auth_helper.common import get_walrus_database
 from itertools import zip_longest
