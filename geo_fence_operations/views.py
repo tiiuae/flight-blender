@@ -5,7 +5,7 @@ import io
 import json
 import logging
 import uuid
-from dataclasses import asdict, is_dataclass
+from dataclasses import asdict
 from decimal import Decimal
 from typing import List
 import arrow
@@ -38,16 +38,9 @@ from .data_definitions import (
 from .models import GeoFence
 from .serializers import GeoFenceRequestSerializer, GeoFenceSerializer
 from .tasks import download_geozone_source, write_geo_zone
+from encoders import EnhancedJSONEncoder
 
 logger = logging.getLogger("django")
-
-
-class EnhancedJSONEncoder(json.JSONEncoder):
-    def default(self, o):
-        if is_dataclass(o):
-            return asdict(o)
-        return super().default(o)
-
 
 INDEX_NAME = "geofence_proc"
 

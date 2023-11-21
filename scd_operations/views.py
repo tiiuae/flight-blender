@@ -16,6 +16,7 @@ import logging
 from uuid import UUID
 from os import environ as env
 from dotenv import load_dotenv, find_dotenv
+from encoders import EnhancedJSONEncoder
 
 load_dotenv(find_dotenv())
 INDEX_NAME = 'opint_proc'
@@ -29,11 +30,6 @@ def is_valid_uuid(uuid_to_test, version=4):
         return False
     return str(uuid_obj) == uuid_to_test
 
-class EnhancedJSONEncoder(json.JSONEncoder):
-        def default(self, o):
-            if is_dataclass(o):
-                return asdict(o)
-            return super().default(o)
 
 @api_view(['GET'])
 @requires_scopes(['utm.inject_test_data'])
