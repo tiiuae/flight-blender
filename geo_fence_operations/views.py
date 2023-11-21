@@ -24,8 +24,7 @@ from shapely.geometry import Point, shape
 from shapely.ops import unary_union
 
 from . import rtree_geo_fence_helper
-from .buffer_helper import toFromUTM
-from .utils import validate_geo_zone
+from .utils import validate_geo_zone,toFromUTM
 from .data_definitions import (
     GeoAwarenessTestHarnessStatus,
     GeoAwarenessTestStatus,
