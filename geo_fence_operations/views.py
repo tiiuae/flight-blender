@@ -114,7 +114,7 @@ def set_geo_fence(request: HttpRequest):
 def set_geozone(request):
     try:
         assert request.headers["Content-Type"] == "application/json"
-    except AssertionError as ae:
+    except AssertionError:
         msg = {"message": "Unsupported Media Type"}
         return HttpResponse(
             json.dumps(msg),
@@ -124,7 +124,7 @@ def set_geozone(request):
 
     try:
         geo_zone = request.data
-    except KeyError as ke:
+    except KeyError:
         msg = json.dumps(
             {"message": "A geozone object is necessary in the body of the request"}
         )
