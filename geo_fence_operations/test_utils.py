@@ -43,18 +43,20 @@ class UtilTests(TestCase):
                     "name": "string",
                     "type": "COMMON",
                     "restriction": "string",
-                    "restriction_conditions": ["string"],
+                    "restrictionConditions": ["string"],
                     "region": 65535,
                     "reason": ["AIR_TRAFFIC"],
-                    "other_reason_info": "string",
-                    "regulation_exemption": "YES",
-                    "u_space_class": "string",
+                    "otherReasonInfo": "string",
+                    "regulationExemption": "YES",
+                    "uSpaceClass": "string",
                     "message": "string",
-                    "additional_properties": None,
+                    "geometry": [],
+                    "applicability": "string",
+                    "additionalProperties": None,
                 }
             ],
-            "title": "Title is here",
-            "description": " This is the description",
+            "title": "string",
+            "description": "string",
         }
         is_valid = validate_geo_zone(valid_geo_zone_json)
         self.assertEqual(is_valid, True)
