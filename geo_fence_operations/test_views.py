@@ -159,9 +159,10 @@ class GeoFencePostTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
 
-class GeoZonePostTests(APITestCase):
+class ed269GeoZonePostTests(APITestCase):
     """
     Contains tests for the function set_geozone in views.
+    The GeoZone spec used here is ed269
     """
 
     def setUp(self):
@@ -194,7 +195,7 @@ class GeoZonePostTests(APITestCase):
         """
         The endpoint has valid payload.
         """
-        valid_payload = {
+        valid_ed269_payload = {
             "features": [
                 {
                     "identifier": "string",
@@ -232,7 +233,7 @@ class GeoZonePostTests(APITestCase):
         response = self.client.post(
             self.api_url,
             content_type="application/json",
-            data=json.dumps(valid_payload),
+            data=json.dumps(valid_ed269_payload),
         )
         self.assertEqual(response.json()["message"], "GeoZone Declaration submitted")
         self.assertIsNotNone(response.json()["id"])
