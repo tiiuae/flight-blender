@@ -29,6 +29,17 @@ def requires_scopes(required_scopes):
     def require_scope(f):
         @wraps(f)
         def decorated(*args, **kwargs):
+            # Set the audience of the instance
+            API_IDENTIFIER = env.get(
+                "PASSPORT_AUDIENCE", "testflight.flightblender.com"
+            )
+            # Check if the setting is Debug
+
+            # Use the OAUTH 2.0 standard endpoint
+            PASSPORT_URL = "{}/.well-known/jwks.json".format(
+                env.get("PASSPORT_URL", "http://local.test:9000")
+            )
+
             request = args[0]
             auth: str = request.META.get("HTTP_AUTHORIZATION", None)
 
@@ -47,9 +58,6 @@ def requires_scopes(required_scopes):
 
             token = parts[1]
 
-            API_IDENTIFIER = env.get(
-                "PASSPORT_AUDIENCE", "testflight.flightblender.com"
-            )
             try:
                 unverified_token_headers = jwt.get_unverified_header(token)
             except jwt.exceptions.DecodeError:
@@ -75,9 +83,6 @@ def requires_scopes(required_scopes):
                         status=status.HTTP_401_UNAUTHORIZED,
                     )
 
-            PASSPORT_URL = "{}/.well-known/jwks.json".format(
-                env.get("PASSPORT_URL", "http://local.test:9000")
-            )
             try:
                 jwks = s.get(PASSPORT_URL).json()
             except requests.exceptions.RequestException:
