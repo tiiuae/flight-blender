@@ -157,3 +157,84 @@ class GeoFencePostTests(APITestCase):
         )
         self.assertEqual(response.json()["message"], "Geofence Declaration submitted")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+
+class ed269GeoZonePostTests(APITestCase):
+    """
+    Contains tests for the function set_geozone in views.
+    The GeoZone spec used here is ed269
+    """
+
+    def setUp(self):
+        self.client.defaults["HTTP_AUTHORIZATION"] = "Bearer " + JWT
+        self.api_url = reverse("set_geozone")
+
+    def test_invalid_content_type(self):
+        """
+        The endpoint expects the content-type in application/json. If anything else is provided an error is thrown.
+        """
+
+        response = self.client.post(self.api_url, content_type="text/plain")
+        self.assertEqual(response.status_code, status.HTTP_415_UNSUPPORTED_MEDIA_TYPE)
+
+    def test_empty_json_payload(self):
+        """
+        The endpoint expects all fields to be provided. Errors will be thrown otherwise.
+        """
+        empty_payload = {}
+        response = self.client.post(
+            self.api_url, content_type="application/json", data=empty_payload
+        )
+        response_json = {
+            "message": "A valid geozone object with a description is necessary the body of the request"
+        }
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.json(), response_json)
+
+    def test_valid_payload(self):
+        """
+        The endpoint has valid payload.
+        """
+        valid_ed269_payload = {
+            "features": [
+                {
+                    "identifier": "string",
+                    "country": "str",
+                    "zoneAuthority": [
+                        {
+                            "name": "string",
+                            "service": "string",
+                            "contactName": "string",
+                            "siteURL": "string",
+                            "email": "string",
+                            "phone": "string",
+                            "purpose": "AUTHORIZATION",
+                            "intervalBefore": "string",
+                        }
+                    ],
+                    "name": "string",
+                    "type": "COMMON",
+                    "restriction": "string",
+                    "restrictionConditions": ["string"],
+                    "region": 65535,
+                    "reason": ["AIR_TRAFFIC"],
+                    "otherReasonInfo": "string",
+                    "regulationExemption": "YES",
+                    "uSpaceClass": "string",
+                    "message": "string",
+                    "geometry": [],
+                    "applicability": "string",
+                    "additionalProperties": None,
+                }
+            ],
+            "title": "string",
+            "description": "string",
+        }
+        response = self.client.post(
+            self.api_url,
+            content_type="application/json",
+            data=json.dumps(valid_ed269_payload),
+        )
+        self.assertEqual(response.json()["message"], "GeoZone Declaration submitted")
+        self.assertIsNotNone(response.json()["id"])
+        self.assertEqual(response.status_code, status.HTTP_200_OK)

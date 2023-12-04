@@ -17,22 +17,10 @@ import logging
 from auth_helper.common import get_redis
 from flight_feed_operations import flight_stream_helper
 from shapely.geometry import Point
+from encoders import EnhancedJSONEncoder
 
 load_dotenv(find_dotenv())
 logger = logging.getLogger('django')
-
-def is_valid_uuid(uuid_to_test, version=4):
-    try:
-        uuid_obj = UUID(uuid_to_test, version=version)
-    except ValueError:
-        return False
-    return str(uuid_obj) == uuid_to_test
-
-class EnhancedJSONEncoder(json.JSONEncoder):
-        def default(self, o):
-            if is_dataclass(o):
-                return asdict(o)
-            return super().default(o)
 
 @api_view(['POST'])
 @requires_scopes(['utm.strategic_coordination'])

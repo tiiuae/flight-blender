@@ -5,13 +5,12 @@ import io
 import json
 import logging
 import uuid
-from dataclasses import asdict, is_dataclass
+from dataclasses import asdict
 from decimal import Decimal
 from typing import List
+
 import arrow
 import pyproj
-from auth_helper.common import get_redis
-from auth_helper.utils import requires_scopes
 from django.core.exceptions import ValidationError
 from django.core.validators import URLValidator
 from django.http import HttpRequest, HttpResponse, JsonResponse
@@ -23,9 +22,12 @@ from rest_framework.renderers import JSONRenderer
 from shapely.geometry import Point, shape
 from shapely.ops import unary_union
 
+from auth_helper.common import get_redis
+from auth_helper.utils import requires_scopes
+from encoders import EnhancedJSONEncoder
+from geo_fence_operations import utils
+
 from . import rtree_geo_fence_helper
-from .buffer_helper import toFromUTM
-from .common import validate_geo_zone
 from .data_definitions import (
     GeoAwarenessTestHarnessStatus,
     GeoAwarenessTestStatus,
@@ -34,21 +36,13 @@ from .data_definitions import (
     GeoZoneChecksResponse,
     GeoZoneFilterPosition,
     GeoZoneHttpsSource,
-    ImplicitDict
+    ImplicitDict,
 )
 from .models import GeoFence
 from .serializers import GeoFenceRequestSerializer, GeoFenceSerializer
 from .tasks import download_geozone_source, write_geo_zone
 
 logger = logging.getLogger("django")
-
-
-class EnhancedJSONEncoder(json.JSONEncoder):
-    def default(self, o):
-        if is_dataclass(o):
-            return asdict(o)
-        return super().default(o)
-
 
 INDEX_NAME = "geofence_proc"
 
@@ -119,10 +113,10 @@ def set_geo_fence(request: HttpRequest):
 
 @api_view(["POST"])
 @requires_scopes(["blender.write"])
-def set_geozone(request):
+def set_geozone(request: HttpRequest):
     try:
         assert request.headers["Content-Type"] == "application/json"
-    except AssertionError as ae:
+    except AssertionError:
         msg = {"message": "Unsupported Media Type"}
         return HttpResponse(
             json.dumps(msg),
@@ -130,26 +124,12 @@ def set_geozone(request):
             content_type="application/json",
         )
 
-    try:
-        geo_zone = request.data
-    except KeyError as ke:
-        msg = json.dumps(
-            {"message": "A geozone object is necessary in the body of the request"}
-        )
-        return HttpResponse(msg, status=status.HTTP_400_BAD_REQUEST)
+    stream = io.BytesIO(request.body)
+    json_payload = JSONParser().parse(stream)
 
-    is_geo_zone_valid = validate_geo_zone(geo_zone)
+    is_geo_zone_valid = utils.validate_geo_zone(json_payload)
 
-    if is_geo_zone_valid:
-        write_geo_zone.delay(geo_zone=json.dumps(geo_zone))
-
-        geo_f = uuid.uuid4()
-        op = json.dumps({"message": "GeoZone Declaration submitted", "id": str(geo_f)})
-        return HttpResponse(
-            op, status=status.HTTP_200_OK, content_type="application/json"
-        )
-
-    else:
+    if not is_geo_zone_valid:
         msg = json.dumps(
             {
                 "message": "A valid geozone object with a description is necessary the body of the request"
@@ -158,6 +138,12 @@ def set_geozone(request):
         return HttpResponse(
             msg, status=status.HTTP_400_BAD_REQUEST, content_type="application/json"
         )
+
+    write_geo_zone.delay(geo_zone=json.dumps(json_payload))
+
+    geo_f = uuid.uuid4()
+    op = json.dumps({"message": "GeoZone Declaration submitted", "id": str(geo_f)})
+    return HttpResponse(op, status=status.HTTP_200_OK, content_type="application/json")
 
 
 @method_decorator(requires_scopes(["blender.read"]), name="dispatch")
@@ -341,9 +327,9 @@ class GeoZoneCheck(generics.GenericAPIView):
                 )
                 # Buffer the point to get a small view port / bounds
                 init_point = Point(filter_position)
-                init_shape_utm = toFromUTM(init_point, proj)
+                init_shape_utm = utils.toFromUTM(init_point, proj)
                 buffer_shape_utm = init_shape_utm.buffer(1)
-                buffer_shape_lonlat = toFromUTM(buffer_shape_utm, proj, inv=True)
+                buffer_shape_lonlat = utils.toFromUTM(buffer_shape_utm, proj, inv=True)
                 view_port = buffer_shape_lonlat.bounds
 
                 my_rtree_helper.generate_geo_fence_index(all_fences=relevant_geo_fences)

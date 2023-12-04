@@ -58,9 +58,9 @@ paths:
                 $ref: '#/components/schemas/Standard500ErrorResponse'
   /signing_public_key:
     get:
-      summary: 'Signing Public Key'
+      summary: 'Blender Signing Public Key'
 
-      description: 'Get the public key used to verify signed responses from Flight Blender.'
+      description: 'Get the public key used to verify signed responses from Flight Blender. When Flight Blender will sign responses and this endpoint will provide a public key that can be used to verify signatures of messages singed by Flight Blender'
 
       security: []
       responses:
@@ -94,6 +94,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Standard500ErrorResponse'
+      tags:
+        - message-signing-verification
   /rid/capabilities:
     get:
       security:
@@ -233,13 +235,13 @@ paths:
   /flight_stream/set_telemetry:
     put: 
       tags:
-      - rid
-      summary: 'Add Remote-ID observation(s)'
+      - telemetry
+      summary: 'Add Telemetry observation(s)'
       security:
         - AuthFromPassport: [blender.write]
       description:
-        "Submit data that is compliant with ASTM RemoteID from the vehicle into Blender, after submission, Flight Blender will \
-        \ normalize the data and eventually send it to Flight Spotlight or make it available to other interfaces. A single or multiple flight states can be submitted at a given time"
+        "Submit data that is compliant with ASTM RemoteID from the vehicle / GCS into Blender, after submission, Flight Blender will \
+        \ normalize the data and eventually send it to Flight Spotlight or make it available to other interfaces e.g. Network RID. A single or multiple flight states can be submitted at a given time."
       requestBody:
         required: true
         content:
@@ -1082,13 +1084,25 @@ paths:
             format: date
           description: >
             The end date for the report. Must be used together with `start_date`.
+        - name: page
+          in: query
+          schema:
+            type: number
+          description: >
+            Page to fetch.
+        - name: page_size
+          in: query
+          schema:
+            type: number
+          description: >
+            Amount of results per page.
       responses:
         '200':
           description: Get a list of declared operations, `start_date`,`end_date` and `view` parameters are optional, if they are not provided all declared operations for the past month are displayed.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/FlightDeclarationList'
+                $ref: '#/components/schemas/FlightDeclarationPaginatedList'
         '400':
           description: Bad request submitted
           content:
@@ -1115,13 +1129,64 @@ paths:
                 $ref: '#/components/schemas/Standard500ErrorResponse'
       tags:
         - flight-declarations
+
+  /flight_declaration_ops/{flight_declaration_id}/network_flight_declarations:
+    get:
+      parameters:
+        - in: path
+          name: flight_declaration_id
+          description: 'This is the ID of the flight declaration'
+          schema:
+            type: string
+            format: uuid
+          required: true
+
+      summary: 'Get a list of all flight declarations / operational intents from the USS Network'
+      security:
+        - AuthFromPassport: [blender.read]
+      description: "Get a list of all Operational Intents from the USSP network"
+
+      responses:
+        '200':
+          description: The USSP network has been queried and the operational intents that encompass the bounds of the current flight declaration are provided. 
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NetworkOpIntGeoJSONFeatureCollection'
+        '400':
+          description: Bad request submitted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequest400ErrorResponse'
+        '401':
+          description: Un-authorized request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Unauthorized401ErrorResponse'
+        '403':
+          description: Forbidden request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Forbidden403ErrorResponse'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Standard500ErrorResponse'
+      tags:
+        - flight-declarations
+
   /flight_stream/public_keys/:
     get:
       operationId: Get all Public Keys      
       security:
         - AuthFromPassport: [blender.read]
 
-      description: 'List Authorized Public keys'
+      description: 'List Authorized Public keys that can be used for submitting remote ID data using the associated private key.'
       parameters: []
       responses:
         '200':
@@ -1133,12 +1198,12 @@ paths:
                   $ref: '#/components/schemas/SignedTelmetryPublicKey'
           description: ''
       tags:
-      - signed-rid
+      - message-signing-verification
     post:
-      operationId: Create a new all Public Key
+      operationId: Create a new Public Key
       security:
         - AuthFromPassport: [ blender.write]
-      description: 'Create a new Authorized Public key'
+      description: 'Create a new Authorized Public key. Once this key is submitted to Flight Blender, messages signed by the corresponding private key will be validated and processed.'
       parameters: []
       requestBody:
         content:
@@ -1159,13 +1224,13 @@ paths:
                 $ref: '#/components/schemas/SignedTelmetryPublicKey'
           description: ''
       tags:
-      - signed-rid
+      - message-signing-verification
   /flight_stream/public_keys/{id}/:
     get:
       operationId: Get a single key
       security:
         - AuthFromPassport: [blender.read]
-      description: 'Get a single Authorized Public key'
+      description: 'Get a single Authorized Public key by ID. A JWK json will be returned by Flight Blender.'
       parameters:
       - name: id
         in: path
@@ -1181,7 +1246,7 @@ paths:
                 $ref: '#/components/schemas/SignedTelmetryPublicKey'
           description: ''
       tags:
-      - signed-rid
+      - message-signing-verification
     put:
       operationId: Update public key details
       description: 'Update the Public Key URL for a key'
@@ -1213,7 +1278,7 @@ paths:
                 $ref: '#/components/schemas/SignedTelmetryPublicKey'
           description: ''
       tags:
-      - signed-rid
+      - message-signing-verification
     delete:
       operationId: Remove Public Key
       description: 'Remove details of a public key in Blender'
@@ -1230,7 +1295,7 @@ paths:
         '204':
           description: ''
       tags:
-      - signed-rid
+      - message-signing-verification
   /flight_declaration_ops/flight_declaration/{flight_declaration_id}:
     get:
       summary: 'Get the details of a single flight declaration'
@@ -1515,7 +1580,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/GeoZone'
+              $ref: '#/components/schemas/GeoZoneSubmission'
 
       responses:
         '200':
@@ -1582,13 +1647,25 @@ paths:
             format: date
           description: >
             The end date for the report. Must be used together with `start_date`.
+        - name: page
+          in: query
+          schema:
+            type: number
+          description: >
+            Page to fetch.
+        - name: page_size
+          in: query
+          schema:
+            type: number
+          description: >
+            Amount of results per page.
       responses:
         '200':
           description: Get a list of submitted geo fence, `start_date`+`end_date` are optional, by default geo fences for today displayed.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/GeoFenceGeoJSONList'
+                $ref: '#/components/schemas/GeoFenceGeoJSONPaginatedList'
         '400':
           description: Bad request submitted
           content:
@@ -1889,23 +1966,9 @@ components:
           submitted_by:
             type: string
             format: email
-          state:
-            enum:
-            - 0
-            - 1
-            - 2
-            - 3
-            - 4
-            - 5 
-            type: integer
-            description: >
-              The state of the operation
-              * `0` - Processing
-              * `1` - Accepted
-              * `2` - Activated
-              * `3` - Nonconforming
-              * `4` - Contingent
-              * `5` - Ended    
+          state:          
+            $ref: '#/components/schemas/FlightDeclarationStateOperatorUpdateEnum'
+          
 
     RemoteIDDataProcessed:
       description: Remote ID data processed successfully
@@ -1930,23 +1993,8 @@ components:
           type: boolean
           example: 1
         state:
-          enum:
-          - 0
-          - 1
-          - 2
-          - 3
-          - 4 
-          - 5
-          type: integer
-          example: 0
-          description: >
-            The state of the operation
-            * `0` - Processing
-            * `1` - Accepted
-            * `2` - Activated
-            * `3` - Nonconforming
-            * `4` - Contingent
-            * `5` - Ended
+          $ref: '#/components/schemas/FlightDeclarationStateEnum'
+        
 
 
     SubscriptionCreated:
@@ -2035,6 +2083,36 @@ components:
         observations:
             $ref: '#/components/schemas/ArrayOfObservations'
 
+    FlightDeclarationPaginatedList: 
+      type: object
+      properties: 
+        links:
+          type: object
+          properties:
+            next:
+              type: string
+              format: uri
+              description: URL of the next page to query
+            previous:
+              type: string
+              format: uri
+              description: URL of the previous page to query
+        total: 
+          type: integer
+        page:    
+          type: integer
+          example: 1 
+        pages:
+          type: integer
+          example: 2
+        page_size:
+          type: integer 
+          example: 10
+        results: 
+          $ref: '#/components/schemas/FlightDeclarationList'
+  
+
+
     FlightDeclarationList:
       type: array
       items:
@@ -2073,10 +2151,13 @@ components:
           description: Email address of person approving this declaration
           type: string
           format: email
-        submitted_by:
+        originating_party:
           description: Email address of person submitting this declaration
           type: string
           format: email  
+        aircraft_id:
+          description: Id of the aircraft 
+          type: string          
         is_approved:
           description: Is the operation approved for flight?
           type: string
@@ -2088,6 +2169,10 @@ components:
           format: date-time
         end_datetime:
           description: The enddate for the query
+          type: string
+          format: date-time
+        latest_telemetry_datetime:
+          description: The the date time of the latest telemetry observation was sent
           type: string
           format: date-time
         flight_declaration_geojson:
@@ -2114,26 +2199,9 @@ components:
                 $ref: '#/components/schemas/FlightDeclarationFeatureGeoJSON'
         operational_intent:
           description: The operational intent for this flight declaration, a raw flight plan is converted to an operational intent which can be in turn submitted to a DSS
-          $ref: '#/components/schemas/OperationalIntentDetails'
-            
+          $ref: '#/components/schemas/OperationalIntentDetails'            
         state:
-          enum:
-          - 0 
-          - 1
-          - 2
-          - 3
-          - 4
-          - 5
-          description: >
-            The state of the operation
-             * `0` - Processing
-             * `1` - Accepted
-             * `2` - Activated
-             * `3` - Nonconforming
-             * `4` - Contingent
-             * `5` - Ended
-
-          type: integer
+          $ref: '#/components/schemas/FlightDeclarationStateEnum'
         type_of_operation: 
           enum:
           - 1
@@ -2190,6 +2258,42 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/FlightDeclarationFeatureGeoJSON'
+    FlightDeclarationStateEnum:  
+          type: integer
+          
+          enum:
+          - 0 
+          - 1
+          - 2
+          - 3
+          - 4
+          - 5
+          - 6
+          - 7
+          - 8
+          description: >
+            The state of the operation
+             * `0` - Processing
+             * `1` - Accepted
+             * `2` - Activated
+             * `3` - Nonconforming
+             * `4` - Contingent
+             * `5` - Ended
+             * `6` - Withdrawn
+             * `7` - Cancelled
+             * `8` - Rejected
+
+    FlightDeclarationStateOperatorUpdateEnum:  
+          type: integer
+          enum:
+          - 2
+          - 3
+          - 5
+          description: >
+            The state of the operation          
+             * `2` - Activated
+             * `3` - Nonconforming
+             * `5` - Ended
 
     FlightDeclarationFeatureGeoJSON:
       type: object
@@ -2297,48 +2401,53 @@ components:
         A three-dimensional geographic volume consisting of a vertically-extruded
         polygon.
       required:
-        - footprint
+        - outline_polygon
       type: object
       properties:
-        footprint:
+        outline_polygon:
           anyOf:
             - $ref: '#/components/schemas/GeoPolygon'
           description: Projection of this volume onto the earth's surface.
-        altitude_lo:
+        altitude_lower:
           anyOf:
             - $ref: '#/components/schemas/Altitude'
           description: Minimum bounding altitude of this volume.
-        altitude_hi:
+        altitude_upper:
           anyOf:
             - $ref: '#/components/schemas/Altitude'
           description: Maximum bounding altitude of this volume.
 
     Altitude:
-      format: float
+      type: object
       description: An altitude, in meters, above the WGS84 ellipsoid.
-      type: number
-      example: 19.5
+      properties:
+        value:
+          type: integer
+        reference:
+          type: string
+        units:
+          type: string
 
     Volume4D: # Reference https://github.com/uastech/standards/blob/master/remoteid/canonical.yaml
       description: Contiguous block of geographic spacetime.
       required:
-        - spatial_volume
+        - volume
       type: object
       properties:
-        spatial_volume:
+        volume:
           anyOf:
             - $ref: '#/components/schemas/Volume3D'
           description: Constant spatial extent of this volume.
         time_start:
-          format: date-time
           description:
             Beginning time of this volume.  RFC 3339 format, per OpenAPI
             specification.
-          type: string
+          anyOf:
+            - $ref: '#/components/schemas/Time'
         time_end:
-          format: date-time
           description: End time of this volume.  RFC 3339 format, per OpenAPI specification.
-          type: string
+          anyOf:
+            - $ref: '#/components/schemas/Time'
 
     GeoFenceGeoJSON:
       type: object
@@ -2402,6 +2511,35 @@ components:
       items:
         $ref: '#/components/schemas/GeoFenceDetails'
 
+    GeoFenceGeoJSONPaginatedList: 
+      type: object
+      properties: 
+        links:
+          type: object
+          properties:
+            next:
+              type: string
+              format: uri
+              description: URL of the next page to query
+            previous:
+              type: string
+              format: uri
+              description: URL of the previous page to query
+        total: 
+          type: integer
+        page:    
+          type: integer
+          example: 1 
+        pages:
+          type: integer
+          example: 2
+        page_size:
+          type: integer 
+          example: 10
+        results: 
+          $ref: '#/components/schemas/GeoFenceGeoJSONList'
+  
+
     Point2D:
       type: array
       maxItems: 2
@@ -2456,6 +2594,34 @@ components:
           items:
             $ref: '#/components/schemas/Point2D'
     GeoFenceGeometryGeoJSON:
+      type: object
+      required:
+        - type
+      properties:
+        type:
+          type: string
+          enum:
+            - Polygon
+            - MultiPolygon
+
+        coordinates:
+          type: array
+          items:
+            $ref: '#/components/schemas/Point2D'
+
+    NetworkOpIntGeoJSONFeatureCollection:           
+      description: The operational intent for this flight declaration as a GeoJSON FeatureCollection
+      type: object
+      properties: 
+        type:
+          type: string
+          example: "FeatureCollection"
+        features:
+          type: array
+          items:
+            $ref: '#/components/schemas/NetworkOpIntsGeoJSON'
+
+    NetworkOpIntsGeoJSON:
       type: object
       required:
         - type
@@ -2811,9 +2977,9 @@ components:
       type: object
       properties:
         id:
-          description: ID for this flight, matching argument in request.
+          description: ID for this flight, matching a existing flight declaration ID in Flight Blender in request. If the ID of does not match, Blender will reject data from this endpoint.
           type: string
-          example: a3423b-213401-0023        
+          example: 238c0189-cdb1-43f0-8510-5718b37eeca4    
           
         eu_classification:
           description: When this field is specified, the Classification Type is "European
@@ -3052,9 +3218,30 @@ components:
           type: string
           example: v0.0.1-445ad3
 
+    GeoZoneSubmission:
+      type: object
+      required: 
+        - title
+        - description
+        - zones
+      properties:
+        features:
+          type: array
+          description: A set of Geozones 
+          items:
+            $ref: '#/components/schemas/GeoZone'
+
+        title:
+          type: string
+          description: A text based title e.g. UASZoneVersion 2022-06-16
+        description:
+          type: string
+          description: A long form description of the Geozone
     #
     # ED-269 compliant GeoZone representation
     #
+
+
     GeoZone:
       type: object
       description: >-
@@ -4704,3 +4891,7 @@ tags:
     description: You can submit geo-fences as GeoJSON into Flight Blender, Blender will convert the GeoJSON to a ED-269 Geofence in the background, use these operations into Flight Blender.
   - name: geozone-qualifier
     description: The InterUSS monitoring test suite has developed a series of tests to check compliance for ED-269 geofences as part of the EU U-Space regulations, these endpoints interact with the qualifier test suite.
+  - name: telemetry
+    description: Flight Blender enables GCS and trackers to submit telemetry data for processes, use this end point to submit the telemetry data.
+  - name: message-signing-verification
+    description: Flight Blender provides security related features for signing of requests and responses. These endpoints provide data about public keys that can used to verify messages on Blender and also in environments outside Blender

@@ -22,6 +22,7 @@ from typing import Any
 from .tasks import stream_rid_test_data_v22,stream_rid_test_data, run_ussp_polling_for_rid
 import time
 from dotenv import load_dotenv, find_dotenv
+from encoders import EnhancedJSONEncoder
 load_dotenv(find_dotenv())
 logger = logging.getLogger('django')
 
@@ -38,13 +39,6 @@ class RIDOutputHelper():
             return [self.make_json_compatible(v) for v in struct]
         except TypeError:
             return struct
-
-class EnhancedJSONEncoder(json.JSONEncoder):
-        def default(self, o):
-            if is_dataclass(o):
-                return asdict(o)
-            return super().default(o)
-
 
 
 class SubscriptionHelper():
