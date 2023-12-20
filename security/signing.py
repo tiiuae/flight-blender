@@ -1,17 +1,13 @@
 import hashlib
 import json
 import logging
-from datetime import datetime, timedelta
 from os import environ as env
 
 import http_sfv
 import jwt
 import requests
-from cryptography import x509
 from cryptography.hazmat.backends import default_backend
-from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.serialization import load_pem_private_key
-from cryptography.x509.oid import NameOID
 from django.core.signing import Signer
 from django.http import HttpRequest, HttpResponse
 from dotenv import find_dotenv, load_dotenv
@@ -49,76 +45,6 @@ class BlenderHTTPSignatureKeyResolver(HTTPSignatureKeyResolver):
             backend=default_backend(),
         )
         return private_key
-
-
-class BlenderCertificationResolver:
-    def create_csr(self, pvt_key):
-        csr = (
-            x509.CertificateSigningRequestBuilder()
-            .subject_name(
-                x509.Name(
-                    [
-                        x509.NameAttribute(NameOID.COUNTRY_NAME, "FI"),
-                        x509.NameAttribute(NameOID.STATE_OR_PROVINCE_NAME, "Pirkanmaa"),
-                        x509.NameAttribute(NameOID.LOCALITY_NAME, "Tampere"),
-                        x509.NameAttribute(NameOID.ORGANIZATION_NAME, "TII"),
-                        x509.NameAttribute(NameOID.COMMON_NAME, "blender.api"),
-                    ]
-                )
-            )
-            .add_extension(
-                x509.SubjectAlternativeName(
-                    [
-                        # Describe what sites we want this certificate for.
-                        x509.DNSName("http://localhost:8000/"),
-                    ]
-                ),
-                critical=False,
-                # Sign the CSR with private key.
-            )
-            .sign(pvt_key, hashes.SHA256())
-        )
-        return csr
-
-    def create_ca(self, pvt_key, csr):
-        # Create a CA certificate
-        ca_subject = x509.Name(
-            [
-                x509.NameAttribute(x509.NameOID.COUNTRY_NAME, "FI"),
-                x509.NameAttribute(x509.NameOID.STATE_OR_PROVINCE_NAME, "Pirkanmaa"),
-                x509.NameAttribute(x509.NameOID.LOCALITY_NAME, "Tampere"),
-                x509.NameAttribute(x509.NameOID.ORGANIZATION_NAME, "TII"),
-                x509.NameAttribute(x509.NameOID.COMMON_NAME, "blender.api"),
-            ]
-        )
-        not_valid_before_time = datetime.utcnow()
-        not_valid_after_time = not_valid_before_time + timedelta(days=365)
-        ca_certificate = (
-            x509.CertificateBuilder()
-            .subject_name(ca_subject)
-            .issuer_name(ca_subject)
-            .public_key(pvt_key.public_key())
-            .serial_number(x509.random_serial_number())
-            .add_extension(
-                x509.BasicConstraints(ca=True, path_length=None), critical=True
-            )
-            .not_valid_before(not_valid_before_time)
-            .not_valid_after(not_valid_after_time)
-            .sign(pvt_key, hashes.SHA256(), default_backend())
-        )
-
-        # Issue a certificate using the CSR and CA
-        issued_certificate = (
-            x509.CertificateBuilder()
-            .subject_name(csr.subject)
-            .issuer_name(ca_certificate.subject)
-            .public_key(csr.public_key())
-            .serial_number(x509.random_serial_number())
-            .not_valid_before(not_valid_before_time)
-            .not_valid_after(not_valid_after_time)
-            .sign(pvt_key, hashes.SHA256(), default_backend())
-        )
-        return issued_certificate
 
 
 class MessageVerifier:
