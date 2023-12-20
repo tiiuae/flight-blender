@@ -118,9 +118,6 @@ class _TestCertificationResolver:
         self._pvt_key = pvt_key
         self.cert_creator = cert_creator
 
-    def resolve_private_key(self, key_id: str):
-        raise NotImplementedError
-
     def resolve_public_key(self, key_id: str):
         csr = self.cert_creator.create_csr(pvt_key=self._pvt_key)
         ca = self.cert_creator.create_ca(pvt_key=self._pvt_key, csr=csr)
