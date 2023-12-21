@@ -6,8 +6,8 @@ from os import environ as env
 import http_sfv
 import jwt
 import requests
-from cryptography.hazmat.primitives.serialization import load_pem_private_key
 from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives.serialization import load_pem_private_key
 from django.core.signing import Signer
 from django.http import HttpRequest, HttpResponse
 from dotenv import find_dotenv, load_dotenv
@@ -20,7 +20,6 @@ from http_message_signatures import (
 from jwcrypto import jwk, jws
 from jwcrypto.common import json_encode
 
-import security.helper as helper
 from auth_helper.common import get_redis
 from non_repudiation.models import PublicKey
 
